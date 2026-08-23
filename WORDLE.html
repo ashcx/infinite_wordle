@@ -4,7 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#f7f8fa">
-  <title>Infinite Wordle — a daily word game</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232857c7'/%3E%3Cpath d='M16 16h32v32H16z' fill='none' stroke='white' stroke-width='6'/%3E%3C/svg%3E">
+  <title>Infinite Wordle — four-, five-, and six-letter word games</title>
   <style>
     :root {
       color-scheme: light;
@@ -26,6 +27,7 @@
       --key: #e6eaf0;
       --shadow: 0 16px 42px rgba(19, 31, 55, .12);
       --radius: 18px;
+      --word-length: 5;
       --tile-size: clamp(48px, 14vw, 68px);
       --key-height: clamp(44px, 11vw, 54px);
       --key-gap: clamp(4px, 1.4vw, 8px);
@@ -67,7 +69,7 @@
     }
     button { font: inherit; }
     button, .key, .tile { -webkit-tap-highlight-color: transparent; }
-    button:focus-visible, .key:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+    button:focus-visible, select:focus-visible, .key:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
     .app-shell { min-height: 100dvh; display: flex; flex-direction: column; }
     .topbar {
       width: 100%;
@@ -94,6 +96,19 @@
     }
     .brand span { color: var(--accent); }
     .top-actions { display: flex; gap: 6px; align-items: center; }
+    .length-picker { display: flex; align-items: center; }
+    .length-picker select {
+      min-height: 42px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface);
+      color: var(--text);
+      font: inherit;
+      font-size: .78rem;
+      font-weight: 800;
+      padding: 0 8px;
+      cursor: pointer;
+    }
     .icon-button, .mode-button {
       min-width: 42px;
       min-height: 42px;
@@ -121,9 +136,9 @@
     .new-game-button { color: var(--accent); }
     .board-area { width: 100%; display: flex; justify-content: center; }
     .board {
-      width: min(100%, calc(var(--tile-size) * 5 + var(--board-gap) * 4));
+      width: min(100%, calc(var(--tile-size) * var(--word-length) + var(--board-gap) * (var(--word-length) - 1)));
       display: grid;
-      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-template-columns: repeat(var(--word-length), minmax(0, 1fr));
       gap: var(--board-gap);
       touch-action: manipulation;
     }
@@ -238,6 +253,8 @@
       .game-wrap { padding-top: 26px; }
       .keyboard-wrap { padding-top: 26px; }
     }
+    [data-length="4"] { --word-length: 4; --tile-size: clamp(52px, 15vw, 72px); }
+    [data-length="6"] { --word-length: 6; --tile-size: clamp(42px, 12vw, 62px); }
     @media (min-width: 768px) {
       .topbar { padding-inline: max(28px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-left)); }
       .game-wrap { padding-top: 32px; }
@@ -251,6 +268,8 @@
       .footer-note { grid-column: 1 / -1; }
     }
     @media (max-width: 374px) {
+      .topbar { flex-wrap: wrap; }
+      .top-actions { flex: 1 1 100%; justify-content: flex-end; }
       .game-heading { align-items: flex-start; flex-direction: column; }
       .heading-actions { width: 100%; justify-content: flex-start; }
       .heading-actions .mode-button { flex: 1 1 auto; }
@@ -272,6 +291,7 @@
     <header class="topbar">
       <a class="brand" href="#" id="brandLink" aria-label="Infinite Wordle home"><span>Infinite</span> Wordle</a>
       <div class="top-actions">
+        <label class="length-picker"><span class="sr-only">Word length</span><select id="lengthSelect" aria-label="Word length"><option value="4">4 letters</option><option value="5" selected>5 letters</option><option value="6">6 letters</option></select></label>
         <button class="icon-button" id="helpButton" type="button" aria-label="How to play" title="How to play">
           <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.7 9a2.4 2.4 0 1 1 3.8 1.9c-.9.6-1.5 1.1-1.5 2.3" fill="none" stroke="currentColor" stroke-linecap="round" stroke-width="2"/><circle cx="12" cy="16.8" r="1" fill="currentColor"/></svg>
         </button>
@@ -293,7 +313,7 @@
         </div>
       </div>
       <section class="board-area" aria-label="Game board">
-        <div class="board" id="board" role="grid" aria-label="Six guesses, five letters each"></div>
+        <div class="board" id="board" role="grid" aria-label="Game board; six guesses"></div>
       </section>
       <div class="status" id="status" aria-live="polite">Loading word list…</div>
       <section class="keyboard-wrap" aria-label="On-screen keyboard">
@@ -308,7 +328,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle" tabindex="-1">
       <button class="modal-close" type="button" data-close="helpModal" aria-label="Close help">×</button>
       <h2 id="helpTitle">How to play</h2>
-      <p>Find the hidden five-letter word in six tries. Each guess must be a familiar English word.</p>
+      <p>Find the hidden word in six tries. Choose a four-, five-, or six-letter game from the top bar. Each guess must be a valid English word of the selected length.</p>
       <div class="legend">
         <div class="legend-item"><span class="legend-swatch correct">A</span><span><strong>Correct</strong> — right letter, right place.</span></div>
         <div class="legend-item"><span class="legend-swatch present">A</span><span><strong>Present</strong> — right letter, different place.</span></div>
@@ -350,6 +370,14 @@
       common, everyday English; it is not a frequency-ranked dictionary.
       Daily index = local calendar days since 2024-01-01 modulo answer count.
     */
+    const WORD_LENGTHS = [4, 5, 6];
+    const WORD_LIST_URLS = {
+      4: { solutions: "data/solutions-4.txt", accepted: "data/accepted-4.txt" },
+      5: { solutions: "data/solutions.txt", accepted: "data/accepted-words.txt" },
+      6: { solutions: "data/solutions-6.txt", accepted: "data/accepted-6.txt" }
+    };
+    let wordLists = {};
+    let selectedLength = 5;
     let SOLUTIONS = [];
     const EXTRA_GUESSES = [
       "ADDED","ADORE","ADULT","AGILE","ALERT","AMAZE","AMEND","ANKLE","ASSET","AVERT","BASIC","BEARD","BEAST","BEGAN","BERRY","BLADE","BLANK","BLAST","BLEND","BLUES","BLUNT","BOAST","BONUS","BRAIN","BRICK","BRUSH","BURST","CANDY","CANOE","CARVE","CLOUD","COAST","COMMA","CORAL","CREPT","CRISP","CROSS","CYCLE","DECAF","DECOY","DEFER","DITCH","DIZZY","DODGE","DONOR","DRAIN","DRAPE","DRIED","DRILL","DWELL","EAGER","EAGLE","EARNS","EASED","EDGES","EIGHT","ELBOW","EMBER","EMPTY","ENACT","ENEMY","ENJOY","EPOXY","ESSAY","ETHIC","EXACT","FAIRY","FERRY","FEVER","FIERY","FILTH","FINER","FLAIR","FLAKE","FLANK","FLARE","FLEET","FLINT","FLOCK","FLOOD","FLOSS","FROST","FRONT","GAMES","GAMMA","GHOST","GIVEN","GLOVE","GRAIN","GRANT","GRAVE","GRAZE","GRIEF","GRILL","GRIND","GROVE","GUMMY","HABIT","HALVE","HANDY","HARDY","HASTE","HAUNT","HAVEN","HEARD","HEELS","HONEY","HONOR","HOURS","HOVER","HUMOR","HURRY","IDEAS","INBOX","INFER","INNER","IRONY","IVORY","JEWEL","JOLLY","KNEEL","KNOWN","LANCE","LEAKY","LEMON","LIVID","LOBBY","LODGE","LOVER","MAGMA","MANOR","MARRY","MAYOR","MERCY","MERRY","METER","MIGHT","MIMIC","MOTEL","MOTTO","MOVES","MURAL","NOBLE","NOMAD","NORTH","OASIS","OCCUR","OLIVE","OPERA","ORBIT","ORGAN","PASTA","PATCH","PATIO","PENCE","PERKY","PERRY","PESKY","PICKY","PLANK","PLAZA","PLEAD","PLUCK","POACH","POEMS","PORCH","PRANK","PROBE","PROSE","PROUD","PROWL","PULSE","PURSE","QUILT","QUIRK","RANCH","RAVEN","REACT","REIGN","RELAY","RENEW","REPAY","RIDER","RIDGE","ROAST","ROBIN","ROBOT","ROCKY","ROGER","ROOST","SAFER","SAINT","SALAD","SAUCE","SAUNA","SAVOR","SCARF","SCARY","SCOUT","SCRAP","SEEDY","SHACK","SHAME","SHARK","SHAVE","SHINY","SHORE","SHOUT","SHRUG","SIXTH","SKULL","SLANG","SLOPE","SLOTH","SLUNG","SNEAK","SNORE","SNOWY","SOLAR","SORRY","SPICE","SPIKE","SPILL","SPINE","SPOON","SPRAY","SQUAD","STAIR","STALE","STARE","STEER","STERN","STICK","STING","STOMP","STRAW","SWEEP","SWELL","SWING","SWORD","TACIT","TANGY","TAPER","TEASE","TEMPO","TENOR","TENTH","THUMB","TIGER","TIMER","TIPSY","TOKEN","TOPAZ","TORCH","TORSO","TOXIC","TRAMP","TRASH","TREAD","TREND","TROLL","TUTOR","TWIRL","UNCUT","UNFED","UNFIT","USHER","UTTER","VAPOR","VAULT","VENOM","VERGE","VITAL","VOTER","WAGON","WALTZ","WEAVE","WEIRD","WHEEL","WHISK","WHOLE","WIDEN","WINDY","WIPER","WITCH","WOKEN","WOVEN","WRIST","YACHT","YEARN","ZEBRA"
@@ -363,29 +391,47 @@
     let ALLOWED = new Set();
     const KEY_ROWS = [["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["ENTER","Z","X","C","V","B","N","M","BACK"]];
     const KEY_RANK = { absent: 1, present: 2, correct: 3 };
-    const STORAGE = { daily: "single-file-word-game:v1:daily", stats: "single-file-word-game:v1:stats", prefs: "single-file-word-game:v1:prefs" };
+    const STORAGE = { daily: "single-file-word-game:v2:daily", stats: "single-file-word-game:v2:stats", prefs: "single-file-word-game:v2:prefs" };
     const EPOCH_UTC = Date.UTC(2024, 0, 1);
     const DEFAULT_STATS = () => ({ played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: [0,0,0,0,0,0], lastWinDate: null, lastPlayedDate: null });
     const $ = id => document.getElementById(id);
     const boardEl = $("board"), keyboardEl = $("keyboard"), statusEl = $("status"), toastEl = $("toast");
     let state;
-    let stats = normalizeStats(readJson(STORAGE.stats, DEFAULT_STATS()));
-    let prefs = normalizePrefs(readJson(STORAGE.prefs, { theme: "light", contrast: false }));
+    let stats = DEFAULT_STATS();
+    let prefs = normalizePrefs(readJson(STORAGE.prefs, { theme: "light", contrast: false, length: 5 }));
     let toastTimer = null;
     let modalId = null;
     let modalReturnFocus = null;
 
-    function parseWordList(text) {
-      return [...new Set(text.split(/\r?\n/).map(word => word.trim().toUpperCase()).filter(word => /^[A-Z]{5}$/.test(word)))];
+    function parseWordList(text, length) {
+      const pattern = new RegExp(`^[A-Z]{${length}}$`);
+      return [...new Set(text.split(/\r?\n/).map(word => word.trim().toUpperCase()).filter(word => pattern.test(word)))];
     }
     async function loadWordLists() {
-      const responses = await Promise.all([fetch("data/solutions.txt"), fetch("data/accepted-words.txt")]);
-      if (responses.some(response => !response.ok)) throw new Error("Word list request failed");
-      const [solutionsText, acceptedText] = await Promise.all(responses.map(response => response.text()));
-      SOLUTIONS = parseWordList(solutionsText);
-      DICTIONARY_WORDS = parseWordList(acceptedText);
-      if (!SOLUTIONS.length || !DICTIONARY_WORDS.length || SOLUTIONS.some(word => !DICTIONARY_WORDS.includes(word))) throw new Error("Word list is empty or inconsistent");
-      ALLOWED = new Set([...DICTIONARY_WORDS, ...SOLUTIONS, ...EXTRA_GUESSES, ...COMMON_GUESSES]);
+      const entries = await Promise.all(WORD_LENGTHS.map(async length => {
+        const urls = WORD_LIST_URLS[length];
+        const responses = await Promise.all([fetch(urls.solutions), fetch(urls.accepted)]);
+        if (responses.some(response => !response.ok)) throw new Error(`Word list request failed for ${length}`);
+        const [solutionsText, acceptedText] = await Promise.all(responses.map(response => response.text()));
+        const solutions = parseWordList(solutionsText, length);
+        const accepted = parseWordList(acceptedText, length);
+        if (!solutions.length || !accepted.length || solutions.some(word => !accepted.includes(word))) throw new Error(`Word list is empty or inconsistent for ${length}`);
+        const extras = length === 5 ? [...EXTRA_GUESSES, ...COMMON_GUESSES] : [];
+        return [length, { solutions, accepted, allowed: new Set([...accepted, ...solutions, ...extras]) }];
+      }));
+      wordLists = Object.fromEntries(entries);
+      applyWordList(selectedLength);
+    }
+    function applyWordList(length) {
+      if (!WORD_LENGTHS.includes(length) || !wordLists[length]) return;
+      selectedLength = length;
+      const list = wordLists[length];
+      SOLUTIONS = list.solutions;
+      DICTIONARY_WORDS = list.accepted;
+      ALLOWED = list.allowed;
+      document.documentElement.dataset.length = String(length);
+      const select = $("lengthSelect");
+      if (select) select.value = String(length);
     }
 
     function readJson(key, fallback) {
@@ -396,38 +442,41 @@
       const fallback = DEFAULT_STATS();
       return { played: Number.isFinite(value && value.played) ? Math.max(0, value.played) : 0, wins: Number.isFinite(value && value.wins) ? Math.max(0, value.wins) : 0, currentStreak: Number.isFinite(value && value.currentStreak) ? Math.max(0, value.currentStreak) : 0, maxStreak: Number.isFinite(value && value.maxStreak) ? Math.max(0, value.maxStreak) : 0, distribution: Array.isArray(value && value.distribution) && value.distribution.length === 6 ? value.distribution.map(number => Number.isFinite(number) ? Math.max(0, number) : 0) : fallback.distribution, lastWinDate: typeof (value && value.lastWinDate) === "string" ? value.lastWinDate : null, lastPlayedDate: typeof (value && value.lastPlayedDate) === "string" ? value.lastPlayedDate : null };
     }
-    function normalizePrefs(value) { return { theme: value && value.theme === "dark" ? "dark" : "light", contrast: Boolean(value && value.contrast) }; }
+    function normalizePrefs(value) { return { theme: value && value.theme === "dark" ? "dark" : "light", contrast: Boolean(value && value.contrast), length: WORD_LENGTHS.includes(Number(value && value.length)) ? Number(value.length) : 5 }; }
     function localDateKey(date = new Date()) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
     function dayNumber(date = new Date()) { return Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - EPOCH_UTC) / 86400000); }
     function getDailyPuzzleIndex(date = new Date()) { return ((dayNumber(date) % SOLUTIONS.length) + SOLUTIONS.length) % SOLUTIONS.length; }
-    function newGame(mode, answer) { return { mode, dateKey: mode === "daily" ? localDateKey() : null, answer, guesses: [], current: "", status: "playing", scored: [], animatingRow: null }; }
-    function isValidGuess(value) { return typeof value === "string" && /^[A-Z]{5}$/.test(value) && ALLOWED.has(value); }
-    function isValidScore(value) { return Array.isArray(value) && value.length === 5 && value.every(outcome => outcome === "correct" || outcome === "present" || outcome === "absent"); }
+    function lengthStorageKey(base, length = selectedLength) { return `${base}:${length}`; }
+    function newGame(mode, answer) { return { mode, length: selectedLength, dateKey: mode === "daily" ? localDateKey() : null, answer, guesses: [], current: "", status: "playing", scored: [], animatingRow: null }; }
+    function isValidGuess(value) { const pattern = new RegExp(`^[A-Z]{${selectedLength}}$`); return typeof value === "string" && pattern.test(value) && ALLOWED.has(value); }
+    function isValidScore(value) { return Array.isArray(value) && value.length === selectedLength && value.every(outcome => outcome === "correct" || outcome === "present" || outcome === "absent"); }
+    function loadStats(length = selectedLength) { stats = normalizeStats(readJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS())); }
     function loadDaily() {
       const today = localDateKey();
-      const saved = readJson(STORAGE.daily, null);
-      if (saved && saved.dateKey === today && SOLUTIONS.includes(saved.answer) && Array.isArray(saved.guesses) && Array.isArray(saved.scored)) {
+      const saved = readJson(lengthStorageKey(STORAGE.daily), null);
+      if (saved && saved.length === selectedLength && saved.dateKey === today && SOLUTIONS.includes(saved.answer) && Array.isArray(saved.guesses) && Array.isArray(saved.scored)) {
         const guesses = saved.guesses.slice(0, 6);
         const scored = saved.scored.slice(0, 6);
-        const current = typeof saved.current === "string" && /^[A-Z]{0,5}$/.test(saved.current) ? saved.current : "";
+        const current = typeof saved.current === "string" && new RegExp(`^[A-Z]{0,${selectedLength}}$`).test(saved.current) ? saved.current : "";
         const status = saved.status === "won" || saved.status === "lost" ? saved.status : "playing";
         if (guesses.length === scored.length && guesses.every(isValidGuess) && scored.every(isValidScore)) {
-          return { ...newGame("daily", saved.answer), mode: "daily", dateKey: today, answer: saved.answer, guesses, current: status === "playing" && guesses.length < 6 ? current : "", status: status === "playing" && guesses.length >= 6 ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
+          return { ...newGame("daily", saved.answer), mode: "daily", length: selectedLength, dateKey: today, answer: saved.answer, guesses, current: status === "playing" && guesses.length < 6 ? current : "", status: status === "playing" && guesses.length >= 6 ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
         }
       }
       const fresh = newGame("daily", SOLUTIONS[getDailyPuzzleIndex()]);
-      writeJson(STORAGE.daily, fresh);
+      writeJson(lengthStorageKey(STORAGE.daily), fresh);
       return fresh;
     }
-    function saveDaily() { if (state.mode === "daily") writeJson(STORAGE.daily, state); }
+    function saveDaily() { if (state.mode === "daily") writeJson(lengthStorageKey(STORAGE.daily, state.length), state); }
     function evaluateGuess(guess, answer) {
-      const result = Array(5).fill("absent");
+      const length = guess.length;
+      const result = Array(length).fill("absent");
       const remaining = {};
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < length; i++) {
         if (guess[i] === answer[i]) result[i] = "correct";
         else remaining[answer[i]] = (remaining[answer[i]] || 0) + 1;
       }
-      for (let i = 0; i < 5; i++) {
+      for (let i = 0; i < length; i++) {
         if (result[i] === "correct") continue;
         if (remaining[guess[i]] > 0) { result[i] = "present"; remaining[guess[i]]--; }
       }
@@ -436,10 +485,11 @@
     function tileLabel(letter, result) { return result ? `${letter}, ${result}` : (letter ? `${letter}, not scored` : "empty"); }
     function renderBoard() {
       boardEl.innerHTML = "";
+      boardEl.setAttribute("aria-label", `Six guesses, ${state.length} letters each`);
       for (let row = 0; row < 6; row++) {
         const guess = state.guesses[row] || (row === state.guesses.length && state.status === "playing" ? state.current : "");
         const result = state.scored[row] || [];
-        for (let col = 0; col < 5; col++) {
+        for (let col = 0; col < state.length; col++) {
           const tile = document.createElement("div");
           const letter = guess[col] || "";
           const outcome = result[col];
@@ -482,7 +532,9 @@
       });
     }
     function render() {
-      $("modeLabel").textContent = state.mode === "daily" ? "Daily puzzle" : "Practice round";
+      document.documentElement.dataset.length = String(state.length);
+      $("lengthSelect").disabled = Boolean(state.scoring);
+      $("modeLabel").textContent = `${state.mode === "daily" ? "Daily puzzle" : "Practice round"} · ${state.length} letters`;
       $("newGameButton").textContent = state.mode === "daily" ? "New practice word" : "New word";
       $("modeButton").textContent = state.mode === "daily" ? "Try practice" : "Back to daily";
       renderBoard(); renderKeyboard();
@@ -495,8 +547,8 @@
     }
     function setStatus(message) { statusEl.textContent = message; showToast(message); }
     function submitGuess() {
-      if (state.status !== "playing" || state.current.length !== 5 || state.scoring) {
-        if (state.status === "playing" && state.current.length !== 5) setStatus("Not enough letters");
+      if (state.status !== "playing" || state.current.length !== state.length || state.scoring) {
+        if (state.status === "playing" && state.current.length !== state.length) setStatus("Not enough letters");
         return;
       }
       const guess = state.current;
@@ -520,14 +572,14 @@
       setTimeout(finish, window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 30 : 680);
     }
     function shakeCurrentRow() {
-      const start = state.guesses.length * 5;
-      [...boardEl.children].slice(start, start + 5).forEach(tile => tile.classList.add("shake"));
+      const start = state.guesses.length * state.length;
+      [...boardEl.children].slice(start, start + state.length).forEach(tile => tile.classList.add("shake"));
     }
     function inputKey(key) {
       if (state.status !== "playing" || state.scoring) return;
       if (key === "ENTER") return submitGuess();
       if (key === "BACK") { state.current = state.current.slice(0, -1); saveDaily(); render(); return; }
-      if (/^[A-Z]$/.test(key) && state.current.length < 5) { state.current += key; saveDaily(); render(); }
+      if (/^[A-Z]$/.test(key) && state.current.length < state.length) { state.current += key; saveDaily(); render(); }
     }
     function onDailyComplete() {
       if (state.mode !== "daily" || state.counted) return;
@@ -539,10 +591,10 @@
         if (stats.lastWinDate === localDateKey(new Date(Date.now() - 86400000))) stats.currentStreak++; else stats.currentStreak = 1;
         stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak); stats.lastWinDate = today;
       } else stats.currentStreak = 0;
-      stats.lastPlayedDate = today; writeJson(STORAGE.stats, stats);
+      stats.lastPlayedDate = today; writeJson(lengthStorageKey(STORAGE.stats, state.length), stats);
     }
     function resultGrid() { return state.scored.map(row => row.map(x => x === "correct" ? "🟩" : x === "present" ? "🟨" : "⬛").join("")).join("\n"); }
-    function shareText() { return `Infinite Wordle ${state.status === "won" ? state.guesses.length : "X"}/6\n\n${resultGrid()}`; }
+    function shareText() { return `Infinite Wordle ${state.length} ${state.status === "won" ? state.guesses.length : "X"}/6\n\n${resultGrid()}`; }
     async function copyResult() {
       const text = shareText();
       try { await navigator.clipboard.writeText(text); showToast("Result copied"); $("shareButton").textContent = "Copied"; }
@@ -584,6 +636,21 @@
     function toggleTheme() { prefs.theme = prefs.theme === "dark" ? "light" : "dark"; applyPrefs(); }
     function toggleContrast() { prefs.contrast = !prefs.contrast; applyPrefs(); $("contrastSwitch").setAttribute("aria-checked", String(prefs.contrast)); }
     function applyPrefs() { document.documentElement.dataset.theme = prefs.theme; document.documentElement.dataset.contrast = prefs.contrast ? "high" : "normal"; writeJson(STORAGE.prefs, prefs); $("themeButton").setAttribute("aria-label", prefs.theme === "dark" ? "Use light mode" : "Use dark mode"); }
+    function switchLength(value) {
+      const length = Number(value);
+      if (!WORD_LENGTHS.includes(length) || !wordLists[length] || state && state.scoring) return;
+      if (modalId) closeModal();
+      applyWordList(length);
+      prefs.length = length;
+      writeJson(STORAGE.prefs, prefs);
+      loadStats(length);
+      if (state && state.mode === "practice") {
+        const answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
+        state = newGame("practice", answer);
+      } else state = loadDaily();
+      render();
+      showToast(`${length}-letter game ready`);
+    }
     function startPractice() {
       let answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
       while (SOLUTIONS.length > 1 && state && answer === state.answer) answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
@@ -592,11 +659,12 @@
     function switchMode() { if (state.mode === "daily") startPractice(); else { state = loadDaily(); render(); } }
     function checkNewDay() { if (state && state.mode === "daily" && state.dateKey !== localDateKey()) { state = loadDaily(); render(); showToast("A new daily puzzle is ready"); } }
     function init() {
-      applyPrefs(); $("contrastSwitch").setAttribute("aria-checked", String(Boolean(prefs.contrast)));
+      applyWordList(prefs.length); applyPrefs(); $("contrastSwitch").setAttribute("aria-checked", String(Boolean(prefs.contrast)));
+      loadStats(selectedLength);
       state = loadDaily(); render();
       keyboardEl.addEventListener("click", event => { const button = event.target.closest("button[data-key]"); if (button) inputKey(button.dataset.key); });
       document.addEventListener("keydown", event => { if (modalId) { if (event.key === "Escape" && modalId !== "resultModal") { closeModal(); return; } if (event.key === "Tab") { const modal = $(modalId).querySelector(".modal"); const focusable = [...modal.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")].filter(node => !node.disabled); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } return; } if (/^[a-zA-Z]$/.test(event.key)) { event.preventDefault(); inputKey(event.key.toUpperCase()); } else if (event.key === "Enter" || event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); inputKey(event.key === "Enter" ? "ENTER" : "BACK"); } });
-      $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("modeButton").addEventListener("click", switchMode); $("newGameButton").addEventListener("click", startPractice); $("shareButton").addEventListener("click", copyResult); $("resultContinue").addEventListener("click", () => { closeModal("resultModal"); switchMode(); }); $("brandLink").addEventListener("click", event => { event.preventDefault(); if (state.mode !== "daily") { state = loadDaily(); render(); } });
+      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("modeButton").addEventListener("click", switchMode); $("newGameButton").addEventListener("click", startPractice); $("shareButton").addEventListener("click", copyResult); $("resultContinue").addEventListener("click", () => { closeModal("resultModal"); switchMode(); }); $("brandLink").addEventListener("click", event => { event.preventDefault(); if (state.mode !== "daily") { state = loadDaily(); render(); } });
       document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
       document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => { if (event.target === backdrop && backdrop.id !== "resultModal") closeModal(backdrop.id); }));
       setInterval(() => { checkNewDay(); updateCountdown(); }, 1000);

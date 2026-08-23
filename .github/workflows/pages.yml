@@ -31,7 +31,7 @@ jobs:
           cp WORDLE.html _site/index.html
           cp WORDLE.html _site/WORDLE.html
           mkdir -p _site/data
-          cp data/solutions.txt data/accepted-words.txt _site/data/
+          cp data/solutions.txt data/accepted-words.txt data/solutions-4.txt data/accepted-4.txt data/solutions-6.txt data/accepted-6.txt _site/data/
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v4
