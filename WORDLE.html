@@ -29,7 +29,7 @@
       --radius: 18px;
       --word-length: 5;
       --tile-size: clamp(48px, 14vw, 68px);
-      --key-height: clamp(48px, 13vw, 56px);
+      --key-height: clamp(52px, 14vw, 60px);
       --key-gap: clamp(5px, 1.6vw, 9px);
       --board-gap: clamp(5px, 1.5vw, 8px);
     }
@@ -106,13 +106,14 @@
     .top-actions { display: flex; gap: 6px; align-items: center; }
     .length-picker { display: flex; align-items: center; }
     .length-picker select {
+      min-width: 108px;
       min-height: 42px;
       border: 1px solid var(--line);
       border-radius: 12px;
       background: var(--surface);
       color: var(--text);
       font: inherit;
-      font-size: .84rem;
+      font-size: .95rem;
       font-weight: 800;
       padding: 0 8px;
       cursor: pointer;
@@ -188,7 +189,7 @@
       border-radius: 9px;
       background: var(--key);
       color: var(--text);
-      font-size: clamp(.78rem, 2.8vw, .92rem);
+      font-size: clamp(.84rem, 3vw, .98rem);
       font-weight: 800;
       cursor: pointer;
       padding: 0 2px;
@@ -196,7 +197,7 @@
       place-items: center;
       touch-action: manipulation;
     }
-    .key.wide { font-size: clamp(.64rem, 2.3vw, .78rem); letter-spacing: -.02em; }
+    .key.wide { font-size: clamp(.7rem, 2.5vw, .84rem); letter-spacing: -.02em; }
     .key:hover { filter: brightness(.96); }
     .key.correct, .key.present, .key.absent { border-color: transparent; color: var(--correct-text); }
     .key.correct { background: var(--correct); }
@@ -259,7 +260,7 @@
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
     @media (min-width: 600px) {
-      :root { --tile-size: clamp(56px, 9vw, 68px); --key-height: 52px; }
+      :root { --tile-size: clamp(56px, 9vw, 68px); --key-height: 56px; }
       .game-wrap { padding-top: 26px; }
       .keyboard-wrap { padding-top: 26px; }
     }
@@ -277,13 +278,15 @@
       .keyboard-wrap { width: 100%; grid-column: 2; grid-row: 2; align-self: center; margin-top: 0; padding-top: 22px; }
       .footer-note { grid-column: 1 / -1; }
     }
-    @media (max-width: 374px) {
+    @media (max-width: 480px) {
       .topbar { flex-wrap: wrap; }
       .top-actions { flex: 1 1 100%; justify-content: flex-end; }
+    }
+    @media (max-width: 374px) {
       .game-heading { align-items: flex-start; flex-direction: column; }
       .heading-actions { width: 100%; justify-content: flex-start; }
       .heading-actions .mode-button { flex: 1 1 auto; }
-      .keyboard-wrap { padding-top: 14px; }
+      .keyboard-wrap { width: calc(100% + 12px); flex-shrink: 0; margin-inline: -6px; padding-top: 14px; }
       .keyboard { gap: 6px; }
       .key { border-radius: 10px; }
     }
