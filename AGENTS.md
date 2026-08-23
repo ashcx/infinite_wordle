@@ -2,18 +2,18 @@
 
 ## Mission
 
-Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as `WORDLE.html` with inline CSS and JavaScript, plus six same-site word-list files it loads at runtime for 4-, 5-, and 6-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
+Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus six same-site word-list files it loads at runtime for 4-, 5-, and 6-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
 
 ## Authority and scope
 
-- You may create or modify `WORDLE.html`, the six `data/solutions*.txt`/`data/accepted*.txt` files, the Pages workflow, and this design documentation when implementation reveals an objective correction.
+- You may create or modify `WORDLE.html`, `styles.css`, `wordle.js`, the six `data/solutions*.txt`/`data/accepted*.txt` files, the Pages workflow, and this design documentation when implementation reveals an objective correction.
 - Do not add package managers, build tooling, external CDN dependencies, backend services, tracking, or generated asset directories.
 - Runtime word-list requests must be same-site relative requests served by GitHub Pages. Do not request external domains at runtime. Do not copy Wordle branding or proprietary assets.
 - Preserve unrelated user files and existing changes. Inspect before changing an existing artifact.
 
 ## Implementation decisions to make autonomously
 
-- Use vanilla HTML, CSS, and modern browser JavaScript in one file.
+- Use vanilla HTML, CSS, and modern browser JavaScript. Keep semantic markup in `WORDLE.html`, presentation in `styles.css`, and behavior in `wordle.js` using standard external-asset conventions.
 - Use original, accessible system-font styling and inline SVG only when an icon is needed.
 - Maintain two text-file vocabularies per length in `data/`: a full accepted dictionary (from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot, filtered to unique alphabetic entries of that length) and a separate solution list. `WORDLE.html` loads all six from relative same-site paths at runtime. Ensure all solutions are in the matching accepted dictionary. Curate solutions for broad everyday familiarity; reject technical, archaic, obscure, specialist, dialect-only, or unusually challenging words from solution lists. Do not narrow accepted dictionaries merely because a word is too obscure to be a solution.
 - Use local date components, a fixed documented epoch, and modulo solution-list length for daily selection.
@@ -50,4 +50,4 @@ Record any limitations plainly in the final handoff. Do not claim tests or brows
 
 ## Definition of done
 
-The work is complete when the GitHub Pages site loads `WORDLE.html` and all six word-list files, meets the acceptance checklist in the design document, and has been validated according to the workflow above. Summarize files changed and validation results in the final response.
+The work is complete when the GitHub Pages site loads `WORDLE.html`, `styles.css`, `wordle.js`, and all six word-list files, meets the acceptance checklist in the design document, and has been validated according to the workflow above. Summarize files changed and validation results in the final response.

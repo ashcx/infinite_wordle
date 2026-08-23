@@ -2,7 +2,7 @@
 
 ## 1. Product summary
 
-Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships `WORDLE.html` with inline CSS and JavaScript plus six same-site text word lists. The browser loads those text lists over the Pages site; no server-side runtime, package installation, or backend is required.
+Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus six same-site text word lists. The browser loads those assets over the Pages site; no server-side runtime, package installation, or backend is required.
 
 The game supports 4-, 5-, and 6-letter variants, each with 6 guesses. A player selects the length from the top bar, enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. Each length has its own daily puzzle, answer pool, saved progress, and statistics; random-practice mode is available for every length.
 
@@ -86,15 +86,16 @@ If storage is blocked, keep the game playable for the current page session and f
 
 ## 6. Technical architecture
 
-`WORDLE.html` is the runtime page, arranged in this order. Each length has a same-site solution file and accepted dictionary file:
+`WORDLE.html` is the semantic runtime page. Its presentation lives in `styles.css` and its behavior lives in `wordle.js`. Each length has a same-site solution file and accepted dictionary file:
 
 - Four letters: `data/solutions-4.txt`, `data/accepted-4.txt`
 - Five letters: `data/solutions.txt`, `data/accepted-words.txt`
 - Six letters: `data/solutions-6.txt`, `data/accepted-6.txt`
 
-1. Document metadata and inline `<style>`.
+1. Document metadata and links to `styles.css` and deferred `wordle.js`.
 2. Semantic application markup: header, game section, keyboard, live region, and hidden dialogs.
-3. One `<script>` containing constants/data, state, pure game logic, persistence, rendering, input handlers, dialogs, and initialization.
+3. `styles.css` containing tokens, responsive layout, component styles, and reduced-motion rules.
+4. `wordle.js` containing constants/data, state, pure game logic, persistence, rendering, input handlers, dialogs, and initialization.
 
 Keep the JavaScript organized into small named functions. Separate pure logic from DOM updates whenever useful:
 
@@ -136,7 +137,7 @@ Maintain two intentionally different vocabularies per length: (1) a curated solu
 
 ## 9. Suggested autonomous delivery sequence
 
-1. Create the semantic single-file shell, tokens/styles, board, keyboard, and dialogs.
+1. Create the semantic HTML shell, external style sheet, board, keyboard, and dialogs.
 2. Implement state and pure scoring logic; add and validate the six repository word-list files.
 3. Add input, scoring animation, end-game flow, and keyboard-state updates.
 4. Add daily selection, persistence, practice mode, statistics, share, and countdown.
