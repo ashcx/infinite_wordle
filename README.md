@@ -1,25 +1,25 @@
 # Infinite Wordle
 
-An offline, single-file Wordle-style game. The complete game lives in [`WORDLE.html`](WORDLE.html); it has no runtime dependencies or network requests.
+## Play the game
 
-## Play locally
+Visit the live site:
 
-Open `WORDLE.html` directly in a modern browser.
+**https://ashcx.github.io/infinite_wordle/**
 
-## Publish with GitHub Pages
+Infinite Wordle is a small personal project made for fun. Solve the common five-letter answer in six guesses, or start a fresh practice round whenever you like. It may not receive regular updates.
 
-This repository includes [`.github/workflows/pages.yml`](.github/workflows/pages.yml). It builds a Pages artifact on every push to `main`, copies `WORDLE.html` to the published site root as `index.html`, and deploys it with GitHub Pages. The original `WORDLE.html` is also published at `/WORDLE.html`.
+## What’s included
 
-One-time setup:
+- Daily and practice games
+- Mobile, tablet, and desktop layouts
+- Accessible keyboard and touch controls
+- Statistics, streaks, sharing, dark mode, and high contrast
+- No account, ads, or tracking
 
-1. Create a GitHub repository named `infinite_wordle` and push this project to its `main` branch.
-2. In the repository, open **Settings → Pages**.
-3. Under **Build and deployment → Source**, select **GitHub Actions**.
-4. Push a commit, or open **Actions → Deploy Infinite Wordle to GitHub Pages → Run workflow**.
-5. After the workflow succeeds, GitHub shows the site URL in the workflow's deployment environment and on **Settings → Pages**. For this repository it is usually `https://<owner>.github.io/infinite_wordle/`.
+## About this repository
 
-The workflow only publishes the generated static site artifact. It does not need npm, a server, secrets, or a custom build tool.
+This is a casual, low-maintenance project rather than an actively developed product. The playable page is [`WORDLE.html`](WORDLE.html). It loads the maintained word sources in [`data/solutions.txt`](data/solutions.txt) and [`data/accepted-words.txt`](data/accepted-words.txt) from the same GitHub Pages site.
 
-## Word-list source
+GitHub Pages deployment is automated by [`.github/workflows/pages.yml`](.github/workflows/pages.yml). It publishes the game at the site root and also keeps `/WORDLE.html` available. Because the word files are loaded by the browser, play through the hosted Pages URL rather than opening `WORDLE.html` directly from your filesystem.
 
-The accepted five-letter dictionary is an embedded build-time snapshot of [`dwyl/english-words`](https://github.com/dwyl/english-words), specifically `words_alpha.txt`. That source is released to the public domain under the Unlicense. Only its alphabetic five-letter entries are copied into `WORDLE.html`; the daily solution list is curated separately.
+The accepted dictionary is based on [`dwyl/english-words`](https://github.com/dwyl/english-words), specifically `words_alpha.txt`, released to the public domain under the Unlicense. Daily answers are curated separately for general familiarity.

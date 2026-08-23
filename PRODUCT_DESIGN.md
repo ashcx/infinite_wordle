@@ -2,7 +2,7 @@
 
 ## 1. Product summary
 
-Build a polished, accessible Wordle-style game named Infinite Wordle that ships as one self-contained `WORDLE.html` file. HTML, CSS, JavaScript, word data, and SVG/icon assets must all live in that file. Opening it directly in a modern desktop or mobile browser must work fully offline, without a server, package installation, network access, or build step.
+Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships `WORDLE.html` with inline CSS and JavaScript plus two same-site text word lists. The browser loads those text lists over the Pages site; no server-side runtime, package installation, or backend is required.
 
 The game uses the familiar five-letter, six-guess format. A player enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. The game supports a daily puzzle and a random-practice mode.
 
@@ -15,7 +15,7 @@ The game uses the familiar five-letter, six-guess format. A player enters a vali
 - Fully keyboard-accessible gameplay with useful screen-reader feedback.
 - Persistent daily-game state and player statistics using `localStorage`.
 - Deterministic daily puzzle selection that is the same for every local player on a calendar day.
-- No external assets, analytics, frameworks, fonts, or requests.
+- No third-party assets, analytics, frameworks, or fonts; only relative requests to the two repository word-list files.
 - Everyday, recognizable five-letter English words only; avoid technical, archaic, dialect-specific, highly regional, inflected-only, or otherwise obscure vocabulary.
 
 ### Non-goals
@@ -30,7 +30,7 @@ The game uses the familiar five-letter, six-guess format. A player enters a vali
 
 1. Render a 5-column × 6-row game board and an on-screen QWERTY keyboard.
 2. Accept physical-keyboard and on-screen-keyboard letters, Backspace/Delete, and Enter.
-3. Permit submission only when the row has five letters and the word is in the embedded allowed-word list.
+3. Permit submission only when the row has five letters and the word is in the loaded allowed-word list.
 4. Animate accepted guesses, then score each tile:
    - **Correct**: right letter in the right position.
    - **Present**: right letter in a different position.
@@ -85,7 +85,7 @@ If storage is blocked, keep the game playable for the current page session and f
 
 ## 6. Technical architecture
 
-`WORDLE.html` is the only runtime artifact, arranged in this order:
+`WORDLE.html` is the runtime page, arranged in this order. `data/solutions.txt` and `data/accepted-words.txt` are same-site runtime data files:
 
 1. Document metadata and inline `<style>`.
 2. Semantic application markup: header, game section, keyboard, live region, and hidden dialogs.
@@ -98,7 +98,7 @@ Keep the JavaScript organized into small named functions. Separate pure logic fr
 - State changes call a single `render()` (or focused render functions) to update UI consistently.
 - Keyboard state always retains the strongest known status: correct > present > absent.
 
-Embed two intentionally different vocabularies: (1) a curated set of five-letter solutions containing only common, broadly recognizable English words suitable for a general audience, and (2) a broad accepted-word dictionary containing every alphabetic five-letter entry and ordinary inflected variant from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot. The accepted dictionary may include technical, archaic, regional, or obscure entries because it is for validating guesses, not selecting answers. Normalize consistently, and ensure every solution appears in the accepted dictionary. The source is downloaded at build time and embedded; runtime gameplay must never fetch it.
+Maintain two intentionally different vocabularies: (1) a curated set of five-letter solutions containing only common, broadly recognizable English words suitable for a general audience, and (2) a broad accepted-word dictionary containing every alphabetic five-letter entry and ordinary inflected variant from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot. The accepted dictionary may include technical, archaic, regional, or obscure entries because it is for validating guesses, not selecting answers. Normalize consistently and ensure every solution appears in the accepted dictionary. The browser loads both lists from relative same-site paths after page load and shows a recoverable error if either request fails.
 
 ## 7. Edge cases and quality bar
 
@@ -112,11 +112,11 @@ Embed two intentionally different vocabularies: (1) a curated set of five-letter
 
 ## 8. Acceptance checklist
 
-- Opening `WORDLE.html` directly starts a playable daily game offline, with no network requests.
+- Opening the GitHub Pages site starts a playable daily game and loads both word lists from the published repository.
 - The board, physical keyboard, and virtual keyboard all work.
 - Known duplicate-letter cases produce correct feedback.
 - Invalid words and incomplete guesses do not advance a row.
-- Common everyday guesses such as `PEARS` and `LOOKS` are accepted when present in the embedded allow-list.
+- Common everyday guesses such as `PEARS` and `LOOKS` are accepted when present in the loaded allow-list.
 - Standard five-letter dictionary words such as `CATER`, including valid variants, are accepted even when they are not possible daily answers.
 - The New word control starts a different practice answer immediately without altering daily progress.
 - Win/loss behavior, dialog, share result, and next-puzzle countdown work.
@@ -130,7 +130,7 @@ Embed two intentionally different vocabularies: (1) a curated set of five-letter
 ## 9. Suggested autonomous delivery sequence
 
 1. Create the semantic single-file shell, tokens/styles, board, keyboard, and dialogs.
-2. Implement state and pure scoring logic; add a small embedded word dataset.
+2. Implement state and pure scoring logic; add and validate the two repository word-list files.
 3. Add input, scoring animation, end-game flow, and keyboard-state updates.
 4. Add daily selection, persistence, practice mode, statistics, share, and countdown.
-5. Perform manual verification using the acceptance checklist; fix regressions and keep the artifact self-contained.
+5. Perform manual verification using the acceptance checklist; fix regressions and keep all runtime requests same-site and relative.
