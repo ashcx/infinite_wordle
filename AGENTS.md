@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as `WORDLE.html` with inline CSS and JavaScript, plus six same-site word-list files it loads at runtime for four-, five-, and six-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
+Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as `WORDLE.html` with inline CSS and JavaScript, plus six same-site word-list files it loads at runtime for 4-, 5-, and 6-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
 
 ## Authority and scope
 

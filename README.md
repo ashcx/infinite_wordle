@@ -6,11 +6,11 @@ Visit the live site:
 
 **https://ashcx.github.io/infinite_wordle/**
 
-Infinite Wordle is a small personal project made for fun. Choose a four-, five-, or six-letter puzzle, solve it in six guesses, or start a fresh practice round whenever you like. It may not receive regular updates.
+Infinite Wordle is a small personal project made for fun. Choose a 4-, 5-, or 6-letter puzzle, solve it in 6 guesses, or start a fresh practice round whenever you like. It may not receive regular updates.
 
 ## What’s included
 
-- Four-, five-, and six-letter daily and practice games
+- 4-, 5-, and 6-letter daily and practice games
 - Mobile, tablet, and desktop layouts
 - Accessible keyboard and touch controls
 - Statistics, streaks, sharing, dark mode, and high contrast

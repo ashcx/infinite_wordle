@@ -4,7 +4,7 @@
 
 Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships `WORDLE.html` with inline CSS and JavaScript plus six same-site text word lists. The browser loads those text lists over the Pages site; no server-side runtime, package installation, or backend is required.
 
-The game supports four-, five-, and six-letter variants, each with six guesses. A player selects the length from the top bar, enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. Each length has its own daily puzzle, answer pool, saved progress, and statistics; random-practice mode is available for every length.
+The game supports 4-, 5-, and 6-letter variants, each with 6 guesses. A player selects the length from the top bar, enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. Each length has its own daily puzzle, answer pool, saved progress, and statistics; random-practice mode is available for every length.
 
 ## 2. Goals and non-goals
 
@@ -45,7 +45,7 @@ The game supports four-, five-, and six-letter variants, each with six guesses. 
 - A completed daily puzzle resumes exactly where it was left after reload; a new day begins a new game.
 - **Practice** starts a fresh randomly selected answer and does not overwrite daily progress or daily statistics.
 - Provide a clearly visible **New word** control that can start a fresh practice round at any time, plus controls to return to daily mode, open help, and view statistics.
-- Provide a top-bar length selector for four, five, and six letters. Switching length loads that variant's daily game (or starts a fresh practice round when already practicing) without mixing saved state or statistics between lengths.
+- Provide a top-bar length selector for 4, 5, and 6 letters. Switching length loads that variant's daily game (or starts a fresh practice round when already practicing) without mixing saved state or statistics between lengths.
 
 ### Persistence and statistics
 
@@ -124,7 +124,7 @@ Maintain two intentionally different vocabularies per length: (1) a curated solu
 - Invalid words and incomplete guesses do not advance a row.
 - Common everyday guesses such as `PEARS` and `LOOKS` are accepted in five-letter mode when present in the loaded allow-list.
 - Standard dictionary words such as `CATER`, including valid variants, are accepted in five-letter mode even when they are not possible daily answers.
-- Switching among four-, five-, and six-letter modes updates the board, input limits, scoring, answer source, daily state, and statistics without cross-contamination.
+- Switching among 4-, 5-, and 6-letter modes updates the board, input limits, scoring, answer source, daily state, and statistics without cross-contamination.
 - The New word control starts a different practice answer immediately without altering daily progress.
 - Win/loss behavior, dialog, share result, and next-puzzle countdown work.
 - Reloading resumes daily state; a simulated different date selects a new daily puzzle.
