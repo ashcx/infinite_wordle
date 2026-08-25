@@ -254,10 +254,13 @@
       .game-wrap { padding-top: 26px; }
       .keyboard-wrap { padding-top: 26px; }
     }
+    [data-length="3"] { --word-length: 3; --tile-size: clamp(70px, 22vw, 84px); }
     [data-length="4"] { --word-length: 4; --tile-size: clamp(52px, 15vw, 72px); }
     [data-length="6"] { --word-length: 6; --tile-size: clamp(42px, 12vw, 62px); }
     [data-length="7"] { --word-length: 7; --tile-size: clamp(36px, 9vw, 56px); }
+    [data-length="8"] { --word-length: 8; --tile-size: clamp(29px, 9vw, 54px); }
     [data-length="7"] .tile { font-size: clamp(1rem, 5.5vw, 1.55rem); }
+    [data-length="8"] .tile { font-size: clamp(.88rem, 4.8vw, 1.45rem); }
     @media (min-width: 768px) {
       .topbar { padding-inline: max(28px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-left)); }
       .game-wrap { padding-top: 32px; }
@@ -275,6 +278,8 @@
       .top-actions { flex: 1 1 100%; justify-content: flex-end; }
     }
     @media (max-width: 374px) {
+      .heading-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+      .heading-actions .mode-button { width: 100%; min-width: 0; padding-inline: 6px; white-space: nowrap; }
       .keyboard-wrap { width: calc(100% + 12px); flex-shrink: 0; margin-inline: -6px; padding-top: 14px; }
       .keyboard { gap: 6px; }
       .key { border-radius: 10px; }

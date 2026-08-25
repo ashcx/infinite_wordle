@@ -2,9 +2,9 @@
 
 ## 1. Product summary
 
-Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus eight same-site text word lists. The browser loads those assets over the Pages site; no server-side runtime, package installation, or backend is required.
+Build a polished, accessible Wordle-style game named Infinite Wordle for GitHub Pages. The repository ships a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus twelve same-site text word lists. The browser loads those assets over the Pages site; no server-side runtime, package installation, or backend is required.
 
-The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-letter variant with 10 guesses. A player selects the length from the top bar, enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. Each length has its own answer pool, persistent round, and statistics. The first round opened on a new local calendar day uses that day's deterministic answer; **New word** then starts a fresh answer that persists across reloads until the round ends or another word is requested.
+The game supports 3-, 4-, 5-, and 6-letter variants with 6 guesses, plus harder 7- and 8-letter variants with 10 guesses. A player selects the length from the top bar, enters a valid word, receives letter-position feedback, and either solves the hidden word or exhausts their attempts. Each length has its own answer pool, persistent round, and statistics. The first round opened on a new local calendar day uses that day's deterministic answer; **New word** then starts a fresh answer that persists across reloads until the round ends or another word is requested.
 
 ## 2. Goals and non-goals
 
@@ -15,7 +15,7 @@ The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-
 - Fully keyboard-accessible gameplay with useful screen-reader feedback.
 - Persistent round state and player statistics using `localStorage`.
 - Deterministic daily puzzle selection that is the same for every local player on a calendar day.
-- No third-party assets, analytics, frameworks, or fonts; only relative requests to the eight repository word-list files.
+- No third-party assets, analytics, frameworks, or fonts; only relative requests to the twelve repository word-list files.
 - Everyday, recognizable English words only for answers; avoid technical, archaic, dialect-specific, highly regional, inflected-only, or otherwise obscure vocabulary.
 
 ### Non-goals
@@ -28,7 +28,7 @@ The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-
 
 ### Core game loop
 
-1. Render a length-specific 4-, 5-, or 6-column × 6-row board, or a 7-column × 10-row board, plus an on-screen QWERTY keyboard.
+1. Render a length-specific 3-, 4-, 5-, or 6-column × 6-row board, or a 7- or 8-column × 10-row board, plus an on-screen QWERTY keyboard.
 2. Accept physical-keyboard and on-screen-keyboard letters, Backspace/Delete, and Enter.
 3. Permit submission only when the row has the selected number of letters and the word is in that length's loaded allowed-word list.
 4. Animate accepted guesses, then score each tile:
@@ -36,7 +36,7 @@ The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-
    - **Present**: right letter in a different position.
    - **Absent**: letter not remaining in the answer.
 5. Score duplicate letters correctly: mark exact-position matches first, consume them, then mark remaining matches as present only while answer-letter counts remain.
-6. End the game immediately after a correct guess, the sixth scored guess for 4–6-letter modes, or the tenth scored guess for 7-letter mode.
+6. End the game immediately after a correct guess, the sixth scored guess for 3–6-letter modes, or the tenth scored guess for 7–8-letter modes.
 7. Lock board input once complete, announce the result, and show the result dialog.
 
 ### Round lifecycle
@@ -44,6 +44,7 @@ The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-
 - On the first load of a new local calendar day, select the answer deterministically from the selected length's solution list using the documented fixed epoch and local date.
 - Persist the active answer, guesses, current row, scoring state, and completion state across reloads.
 - **New word** immediately replaces the active answer with a randomly selected solution word. The new round persists across reloads, including across calendar days, until it is solved, revealed after the guess limit, or replaced with another New word request.
+- **Reset board** asks for confirmation, then clears the current guesses and tile feedback while preserving the exact target word. Resetting a completed round permits replay without counting that replay as a second statistic entry.
 - After a completed round is loaded again, start a fresh random round so the game can continue without a separate practice mode.
 - Provide a top-bar length selector for 4, 5, 6, and 7 letters. Switching length loads that length's own persistent round and statistics without cross-contamination.
 
@@ -52,7 +53,7 @@ The game supports 4-, 5-, and 6-letter variants with 6 guesses, plus a harder 7-
 Use namespaced `localStorage` keys, versioned in case the data schema changes. Persist:
 
 - Current round source/date, answer identifier/answer, guesses, active row, completion state, and selected length.
-- Statistics for all completed rounds: games played, wins, current win streak, maximum win streak, and wins by guess count (1–6 for 4–6-letter modes; 1–10 for 7-letter mode).
+- Statistics for all completed rounds: games played, wins, current win streak, maximum win streak, and wins by guess count (1–6 for 3–6-letter modes; 1–10 for 7–8-letter modes).
 - User preferences such as dark mode and optional high-contrast colors.
 
 If storage is blocked, keep the game playable for the current page session and fail silently except for a non-disruptive optional notice.
@@ -88,10 +89,12 @@ If storage is blocked, keep the game playable for the current page session and f
 
 `WORDLE.html` is the semantic runtime page. Its presentation lives in `styles.css` and its behavior lives in `wordle.js`. Each length has a same-site solution file and accepted dictionary file:
 
+- Three letters: `data/solutions-3.txt`, `data/accepted-3.txt`
 - Four letters: `data/solutions-4.txt`, `data/accepted-4.txt`
 - Five letters: `data/solutions.txt`, `data/accepted-words.txt`
 - Six letters: `data/solutions-6.txt`, `data/accepted-6.txt`
 - Seven letters: `data/solutions-7.txt`, `data/accepted-7.txt`
+- Eight letters: `data/solutions-8.txt`, `data/accepted-8.txt`
 
 1. Document metadata and links to `styles.css` and deferred `wordle.js`.
 2. Semantic application markup: header, game section, keyboard, live region, and hidden dialogs.
@@ -106,7 +109,7 @@ Keep the JavaScript organized into small named functions. Separate pure logic fr
 - Keyboard state always retains the strongest known status: correct > present > absent.
 - Keep `state.length` explicit on every game state. Select the matching list bundle before creating a game, and namespace round/stat records by length so changing the top-bar selector cannot mix answers or statistics.
 
-Maintain two intentionally different vocabularies per length: (1) a curated solution set containing only common, broadly recognizable English words suitable for a general audience, and (2) a broad accepted-word dictionary containing every alphabetic entry of that length and ordinary inflected variant from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot. The accepted dictionaries may include technical, archaic, regional, or obscure entries because they validate guesses rather than select answers. Normalize consistently and ensure every solution appears in its matching accepted dictionary. The browser loads all eight lists from relative same-site paths after page load and shows a recoverable error if any request fails.
+Maintain two intentionally different vocabularies per length: (1) a curated solution set containing only common, broadly recognizable English words suitable for a general audience, and (2) a broad accepted-word dictionary containing every alphabetic entry of that length and ordinary inflected variant from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot. The accepted dictionaries may include technical, archaic, regional, or obscure entries because they validate guesses rather than select answers. Normalize consistently and ensure every solution appears in its matching accepted dictionary. The browser loads all twelve lists from relative same-site paths after page load and shows a recoverable error if any request fails.
 
 ## 7. Edge cases and quality bar
 
@@ -120,26 +123,27 @@ Maintain two intentionally different vocabularies per length: (1) a curated solu
 
 ## 8. Acceptance checklist
 
-- Opening the GitHub Pages site starts a playable daily game and loads all eight length-specific word lists from the published repository.
+- Opening the GitHub Pages site starts a playable daily game and loads all twelve length-specific word lists from the published repository.
 - The board, physical keyboard, and virtual keyboard all work.
 - Known duplicate-letter cases produce correct feedback.
 - Invalid words and incomplete guesses do not advance a row.
 - Common everyday guesses such as `PEARS` and `LOOKS` are accepted in five-letter mode when present in the loaded allow-list.
 - Standard dictionary words such as `CATER`, including valid variants, are accepted in five-letter mode even when they are not possible daily answers.
-- Switching among 4-, 5-, 6-, and 7-letter modes updates the board, row count, input limits, scoring, answer source, round state, and statistics without cross-contamination.
+- Switching among 3-, 4-, 5-, 6-, 7-, and 8-letter modes updates the board, row count, input limits, scoring, answer source, round state, and statistics without cross-contamination.
 - The New word control starts a different answer immediately and persists it across reloads.
+- The Reset board control confirms before clearing guesses, preserves the target answer, and does not double-count completed-round replays.
 - Win/loss behavior, dialog, and share result work without a separate practice/daily flow.
 - Reloading resumes the active round; a simulated different date selects a new deterministic daily answer only when no New word round is active.
 - A completed round is replaced by a fresh random round on the next load or New word request.
 - Stats/streaks update once per completed round and survive reloads.
-- Layout works at approximately 320px wide and desktop widths for all four lengths.
+- Layout works at approximately 320px wide and desktop widths for all six lengths.
 - Layout works at approximately 320px phone width, common 375–430px phone widths, 768px tablet width in portrait and landscape, and 1024px+ desktop widths without clipping or horizontal scrolling.
 - Keyboard-only and reduced-motion paths are usable.
 
 ## 9. Suggested autonomous delivery sequence
 
 1. Create the semantic HTML shell, external style sheet, board, keyboard, and dialogs.
-2. Implement state and pure scoring logic; add and validate the eight repository word-list files.
+2. Implement state and pure scoring logic; add and validate the twelve repository word-list files.
 3. Add input, scoring animation, end-game flow, and keyboard-state updates.
 4. Add deterministic daily-start selection, unified round persistence, statistics, and share behavior.
 5. Perform manual verification using the acceptance checklist; fix regressions and keep all runtime requests same-site and relative.

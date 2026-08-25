@@ -4,13 +4,15 @@
       common, everyday English; it is not a frequency-ranked dictionary.
       Daily index = local calendar days since 2024-01-01 modulo answer count.
     */
-    const WORD_LENGTHS = [4, 5, 6, 7];
-    const MAX_GUESSES_BY_LENGTH = { 7: 10 };
+    const WORD_LENGTHS = [3, 4, 5, 6, 7, 8];
+    const MAX_GUESSES_BY_LENGTH = { 7: 10, 8: 10 };
     const WORD_LIST_URLS = {
+      3: { solutions: "data/solutions-3.txt", accepted: "data/accepted-3.txt" },
       4: { solutions: "data/solutions-4.txt", accepted: "data/accepted-4.txt" },
       5: { solutions: "data/solutions.txt", accepted: "data/accepted-words.txt" },
       6: { solutions: "data/solutions-6.txt", accepted: "data/accepted-6.txt" },
-      7: { solutions: "data/solutions-7.txt", accepted: "data/accepted-7.txt" }
+      7: { solutions: "data/solutions-7.txt", accepted: "data/accepted-7.txt" },
+      8: { solutions: "data/solutions-8.txt", accepted: "data/accepted-8.txt" }
     };
     let wordLists = {};
     let selectedLength = 5;
@@ -299,6 +301,18 @@
       state = newGame(randomSolution(state && state.answer), "new");
       saveRound(); render(); showToast("New word ready");
     }
+    function requestReset() {
+      if (!state || state.scoring) return;
+      openModal("resetModal");
+    }
+    function confirmReset() {
+      if (!state || state.scoring) return;
+      closeModal("resetModal");
+      const wasComplete = state.status !== "playing";
+      state = newGame(state.answer, state.source);
+      state.counted = wasComplete;
+      saveRound(); render(); showToast("Board reset");
+    }
     function checkNewDay() { if (state && state.source === "daily" && state.dateKey !== localDateKey()) { state = loadRound(); render(); showToast("A new daily puzzle is ready"); } }
     function init() {
       applyWordList(prefs.length); applyPrefs(); $("contrastSwitch").setAttribute("aria-checked", String(Boolean(prefs.contrast)));
@@ -306,7 +320,7 @@
       state = loadRound(); render();
       keyboardEl.addEventListener("click", event => { const button = event.target.closest("button[data-key]"); if (button) inputKey(button.dataset.key); });
       document.addEventListener("keydown", event => { if (modalId) { if (event.key === "Escape" && modalId !== "resultModal") { closeModal(); return; } if (event.key === "Tab") { const modal = $(modalId).querySelector(".modal"); const focusable = [...modal.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")].filter(node => !node.disabled); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } return; } if (/^[a-zA-Z]$/.test(event.key)) { event.preventDefault(); inputKey(event.key.toUpperCase()); } else if (event.key === "Enter" || event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); inputKey(event.key === "Enter" ? "ENTER" : "BACK"); } });
-      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("brandLink").addEventListener("click", event => event.preventDefault());
+      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("resetButton").addEventListener("click", requestReset); $("confirmResetButton").addEventListener("click", confirmReset); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("brandLink").addEventListener("click", event => event.preventDefault());
       document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
       document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => { if (event.target === backdrop && backdrop.id !== "resultModal") closeModal(backdrop.id); }));
       setInterval(checkNewDay, 1000);
