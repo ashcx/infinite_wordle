@@ -6,8 +6,9 @@
   <meta name="theme-color" content="#f7f8fa">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232857c7'/%3E%3Cpath d='M16 16h32v32H16z' fill='none' stroke='white' stroke-width='6'/%3E%3C/svg%3E">
   <title>Infinite Wordle — 4-, 5-, 6-, and 7-letter word games</title>
-  <link rel="stylesheet" href="styles.css">
-  <script src="wordle.js" defer></script>
+  <!-- Bump the asset version when shipping behavior or styling changes so browsers do not reuse stale Pages assets. -->
+  <link rel="stylesheet" href="styles.css?v=20260825-1">
+  <script src="wordle.js?v=20260825-1" defer></script>
 </head>
 <body>
   <div class="app-shell" id="app">
@@ -29,10 +30,9 @@
 
     <main class="game-wrap">
       <div class="game-heading">
-        <div class="mode-label" id="modeLabel">Daily puzzle</div>
+        <div class="mode-label" id="modeLabel">5 letters</div>
         <div class="heading-actions">
-          <button class="mode-button new-game-button" id="newGameButton" type="button">New practice word</button>
-          <button class="mode-button" id="modeButton" type="button">Try practice</button>
+          <button class="mode-button new-game-button" id="newGameButton" type="button">New word</button>
         </div>
       </div>
       <section class="board-area" aria-label="Game board">
@@ -52,6 +52,8 @@
       <button class="modal-close" type="button" data-close="helpModal" aria-label="Close help">×</button>
       <h2 id="helpTitle">How to play</h2>
       <p>Find the hidden word in 6 tries, or 10 tries for 7-letter mode. Choose a 4-, 5-, 6-, or 7-letter game from the top bar. Each guess must be a valid English word of the selected length.</p>
+      <p>When you first open the game each day, the selected length starts with that day's curated word. Press <strong>New word</strong> whenever you want a fresh word; it stays in place across reloads until you solve it, run out of guesses, or start another word.</p>
+      <p>The daily word is deterministic: the local calendar date is counted from a fixed 1 January 2024 epoch, then wrapped with modulo arithmetic over the selected length's curated answer list.</p>
       <div class="legend">
         <div class="legend-item"><span class="legend-swatch correct">A</span><span><strong>Correct</strong> — right letter, right place.</span></div>
         <div class="legend-item"><span class="legend-swatch present">A</span><span><strong>Present</strong> — right letter, different place.</span></div>
@@ -68,7 +70,7 @@
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
       <button class="modal-close" type="button" data-close="statsModal" aria-label="Close statistics">×</button>
       <h2 id="statsTitle">Statistics</h2>
-      <p>Daily results only. Practice games stay separate.</p>
+      <p>Results for this word length, including words started with New word.</p>
       <div class="stats-grid" id="statsGrid"></div>
       <div class="result-label">Guess distribution</div>
       <div class="distribution" id="distribution"></div>
@@ -82,7 +84,7 @@
       <div id="resultSummary"></div>
       <div class="stats-grid" id="resultStats"></div>
       <p id="nextPuzzle"></p>
-      <div class="modal-actions"><button class="primary" id="shareButton" type="button">Copy result</button><button class="secondary" id="resultContinue" type="button">Keep playing practice</button></div>
+      <div class="modal-actions"><button class="primary" id="shareButton" type="button">Copy result</button><button class="secondary" id="resultNewWord" type="button">New word</button></div>
     </section>
   </div>
 

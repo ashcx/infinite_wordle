@@ -27,7 +27,7 @@
     let ALLOWED = new Set();
     const KEY_ROWS = [["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["ENTER","Z","X","C","V","B","N","M","BACK"]];
     const KEY_RANK = { absent: 1, present: 2, correct: 3 };
-    const STORAGE = { daily: "single-file-word-game:v2:daily", stats: "single-file-word-game:v2:stats", prefs: "single-file-word-game:v2:prefs" };
+    const STORAGE = { round: "single-file-word-game:v3:round", legacyDaily: "single-file-word-game:v2:daily", stats: "single-file-word-game:v3:stats", prefs: "single-file-word-game:v2:prefs" };
     const EPOCH_UTC = Date.UTC(2024, 0, 1);
     function maxGuesses(length = selectedLength) { return MAX_GUESSES_BY_LENGTH[length] || 6; }
     const DEFAULT_STATS = (length = selectedLength) => ({ played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: Array(maxGuesses(length)).fill(0), lastWinDate: null, lastPlayedDate: null });
@@ -84,27 +84,42 @@
     function dayNumber(date = new Date()) { return Math.floor((Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) - EPOCH_UTC) / 86400000); }
     function getDailyPuzzleIndex(date = new Date()) { return ((dayNumber(date) % SOLUTIONS.length) + SOLUTIONS.length) % SOLUTIONS.length; }
     function lengthStorageKey(base, length = selectedLength) { return `${base}:${length}`; }
-    function newGame(mode, answer) { return { mode, length: selectedLength, dateKey: mode === "daily" ? localDateKey() : null, answer, guesses: [], current: "", status: "playing", scored: [], animatingRow: null }; }
+    function randomSolution(exclude = "") {
+      if (!SOLUTIONS.length) return "";
+      let answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
+      while (SOLUTIONS.length > 1 && answer === exclude) answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
+      return answer;
+    }
+    function newGame(answer, source = "new") { return { length: selectedLength, source, dateKey: source === "daily" ? localDateKey() : null, answer, guesses: [], current: "", status: "playing", scored: [], scoring: false, counted: false, animatingRow: null }; }
     function isValidGuess(value) { const pattern = new RegExp(`^[A-Z]{${selectedLength}}$`); return typeof value === "string" && pattern.test(value) && ALLOWED.has(value); }
     function isValidScore(value) { return Array.isArray(value) && value.length === selectedLength && value.every(outcome => outcome === "correct" || outcome === "present" || outcome === "absent"); }
     function loadStats(length = selectedLength) { stats = normalizeStats(readJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS(length)), length); }
-    function loadDaily() {
+    function normalizeSavedRound(saved) {
+      const source = saved.source === "daily" || saved.mode === "daily" ? "daily" : "new";
+      const status = saved.status === "won" || saved.status === "lost" ? saved.status : "playing";
+      const guesses = saved.guesses.slice(0, maxGuesses(selectedLength));
+      const scored = saved.scored.slice(0, maxGuesses(selectedLength));
+      const current = typeof saved.current === "string" && new RegExp(`^[A-Z]{0,${selectedLength}}$`).test(saved.current) ? saved.current : "";
+      if (guesses.length !== scored.length || !guesses.every(isValidGuess) || !scored.every(isValidScore)) return null;
+      return { ...newGame(saved.answer, source), length: selectedLength, dateKey: source === "daily" ? localDateKey() : null, answer: saved.answer, guesses, current: status === "playing" && guesses.length < maxGuesses(selectedLength) ? current : "", status: status === "playing" && guesses.length >= maxGuesses(selectedLength) ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
+    }
+    function loadRound() {
       const today = localDateKey();
-      const saved = readJson(lengthStorageKey(STORAGE.daily), null);
-      if (saved && saved.length === selectedLength && saved.dateKey === today && SOLUTIONS.includes(saved.answer) && Array.isArray(saved.guesses) && Array.isArray(saved.scored)) {
-        const guesses = saved.guesses.slice(0, maxGuesses(selectedLength));
-        const scored = saved.scored.slice(0, maxGuesses(selectedLength));
-        const current = typeof saved.current === "string" && new RegExp(`^[A-Z]{0,${selectedLength}}$`).test(saved.current) ? saved.current : "";
-        const status = saved.status === "won" || saved.status === "lost" ? saved.status : "playing";
-        if (guesses.length === scored.length && guesses.every(isValidGuess) && scored.every(isValidScore)) {
-          return { ...newGame("daily", saved.answer), mode: "daily", length: selectedLength, dateKey: today, answer: saved.answer, guesses, current: status === "playing" && guesses.length < maxGuesses(selectedLength) ? current : "", status: status === "playing" && guesses.length >= maxGuesses(selectedLength) ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
+      const saved = readJson(lengthStorageKey(STORAGE.round), null) || readJson(lengthStorageKey(STORAGE.legacyDaily), null);
+      if (saved && saved.length === selectedLength && SOLUTIONS.includes(saved.answer) && Array.isArray(saved.guesses) && Array.isArray(saved.scored)) {
+        const restored = normalizeSavedRound(saved);
+        if (restored && restored.status === "playing" && (restored.source === "new" || saved.dateKey === today)) return restored;
+        if (restored && restored.status !== "playing") {
+          const next = newGame(randomSolution(restored.answer), "new");
+          saveRound(next);
+          return next;
         }
       }
-      const fresh = newGame("daily", SOLUTIONS[getDailyPuzzleIndex()]);
-      writeJson(lengthStorageKey(STORAGE.daily), fresh);
+      const fresh = newGame(SOLUTIONS[getDailyPuzzleIndex()], "daily");
+      saveRound(fresh);
       return fresh;
     }
-    function saveDaily() { if (state.mode === "daily") writeJson(lengthStorageKey(STORAGE.daily, state.length), state); }
+    function saveRound(round = state) { if (round) writeJson(lengthStorageKey(STORAGE.round, round.length), round); }
     function evaluateGuess(guess, answer) {
       const length = guess.length;
       const result = Array(length).fill("absent");
@@ -171,9 +186,8 @@
     function render() {
       document.documentElement.dataset.length = String(state.length);
       $("lengthSelect").disabled = Boolean(state.scoring);
-      $("modeLabel").textContent = `${state.mode === "daily" ? "Daily puzzle" : "Practice round"} · ${state.length} letters`;
-      $("newGameButton").textContent = state.mode === "daily" ? "New practice word" : "New word";
-      $("modeButton").textContent = state.mode === "daily" ? "Try practice" : "Back to daily";
+      $("modeLabel").textContent = `${state.length} letters`;
+      $("newGameButton").textContent = "New word";
       renderBoard(); renderKeyboard();
       if (state.status === "playing") statusEl.textContent = `${maxGuesses(state.length) - state.guesses.length} ${maxGuesses(state.length) - state.guesses.length === 1 ? "guess" : "guesses"} left`;
       else statusEl.textContent = state.status === "won" ? "Solved" : `The word was ${state.answer}`;
@@ -193,13 +207,13 @@
       state.scoring = true;
       const result = evaluateGuess(guess, state.answer);
       state.guesses.push(guess); state.scored.push(result); state.current = ""; state.animatingRow = state.guesses.length - 1;
-      if (state.mode === "daily") saveDaily();
+      saveRound();
       render();
       const finish = () => {
         state.scoring = false; state.animatingRow = null;
-        if (guess === state.answer) { state.status = "won"; onDailyComplete(); }
-        else if (state.guesses.length === maxGuesses(state.length)) { state.status = "lost"; onDailyComplete(); }
-        if (state.mode === "daily") saveDaily();
+        if (guess === state.answer) { state.status = "won"; onRoundComplete(); }
+        else if (state.guesses.length === maxGuesses(state.length)) { state.status = "lost"; onRoundComplete(); }
+        saveRound();
         render();
         if (state.status !== "playing") {
           setStatus(state.status === "won" ? "You solved it!" : `The answer was ${state.answer}`);
@@ -215,20 +229,20 @@
     function inputKey(key) {
       if (state.status !== "playing" || state.scoring) return;
       if (key === "ENTER") return submitGuess();
-      if (key === "BACK") { state.current = state.current.slice(0, -1); saveDaily(); render(); return; }
-      if (/^[A-Z]$/.test(key) && state.current.length < state.length) { state.current += key; saveDaily(); render(); }
+      if (key === "BACK") { state.current = state.current.slice(0, -1); saveRound(); render(); return; }
+      if (/^[A-Z]$/.test(key) && state.current.length < state.length) { state.current += key; saveRound(); render(); }
     }
-    function onDailyComplete() {
-      if (state.mode !== "daily" || state.counted) return;
+    function onRoundComplete() {
+      if (state.counted) return;
       state.counted = true;
       stats.played++;
       const today = localDateKey();
       if (state.status === "won") {
         stats.wins++; stats.distribution[state.guesses.length - 1]++;
-        if (stats.lastWinDate === localDateKey(new Date(Date.now() - 86400000))) stats.currentStreak++; else stats.currentStreak = 1;
+        stats.currentStreak++;
         stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak); stats.lastWinDate = today;
       } else stats.currentStreak = 0;
-      stats.lastPlayedDate = today; writeJson(lengthStorageKey(STORAGE.stats, state.length), stats);
+      stats.lastPlayedDate = localDateKey(); writeJson(lengthStorageKey(STORAGE.stats, state.length), stats);
     }
     function resultGrid() { return state.scored.map(row => row.map(x => x === "correct" ? "🟩" : x === "present" ? "🟨" : "⬛").join("")).join("\n"); }
     function shareText() { return `Infinite Wordle ${state.length} ${state.status === "won" ? state.guesses.length : "X"}/${maxGuesses(state.length)}\n\n${resultGrid()}`; }
@@ -255,14 +269,8 @@
       const win = state.status === "won";
       $("resultTitle").textContent = win ? "Nice solve" : "Round over";
       $("resultSummary").innerHTML = `<div class="result-label">${win ? "Solved in " + state.guesses.length + " guesses" : "The answer was"}</div><div class="result-word">${state.answer}</div><div class="result-label">Share your result</div><p style="white-space:pre-line;font-family:ui-monospace,monospace;line-height:1.35">${resultGrid()}</p>`;
-      $("nextPuzzle").innerHTML = state.mode === "daily" ? `Next daily puzzle in <span class="countdown" id="countdown">—</span>` : "Practice does not change your daily statistics.";
-      $("resultContinue").style.display = state.mode === "practice" ? "inline-block" : "none";
-      $("shareButton").textContent = "Copy result"; renderStats(); openModal("resultModal"); updateCountdown();
-    }
-    function updateCountdown() {
-      const countdown = $("countdown"); if (!countdown) return;
-      const now = new Date(); const next = new Date(now); next.setHours(24,0,0,0); const diff = Math.max(0, next - now);
-      countdown.textContent = `${String(Math.floor(diff / 3600000)).padStart(2,"0")}h ${String(Math.floor(diff % 3600000 / 60000)).padStart(2,"0")}m ${String(Math.floor(diff % 60000 / 1000)).padStart(2,"0")}s`;
+      $("nextPuzzle").textContent = "Press New word to start another round.";
+      $("shareButton").textContent = "Copy result"; renderStats(); openModal("resultModal");
     }
     function openModal(id) {
       modalReturnFocus = document.activeElement; modalId = id; const backdrop = $(id); backdrop.hidden = false; backdrop.querySelector(".modal").focus();
@@ -281,30 +289,27 @@
       prefs.length = length;
       writeJson(STORAGE.prefs, prefs);
       loadStats(length);
-      if (state && state.mode === "practice") {
-        const answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
-        state = newGame("practice", answer);
-      } else state = loadDaily();
+      state = loadRound();
       render();
       showToast(`${length}-letter game ready`);
     }
-    function startPractice() {
-      let answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
-      while (SOLUTIONS.length > 1 && state && answer === state.answer) answer = SOLUTIONS[Math.floor(Math.random() * SOLUTIONS.length)];
-      state = newGame("practice", answer); render(); showToast("New practice word ready");
+    function startNewWord() {
+      if (state && state.scoring) return;
+      if (modalId) closeModal();
+      state = newGame(randomSolution(state && state.answer), "new");
+      saveRound(); render(); showToast("New word ready");
     }
-    function switchMode() { if (state.mode === "daily") startPractice(); else { state = loadDaily(); render(); } }
-    function checkNewDay() { if (state && state.mode === "daily" && state.dateKey !== localDateKey()) { state = loadDaily(); render(); showToast("A new daily puzzle is ready"); } }
+    function checkNewDay() { if (state && state.source === "daily" && state.dateKey !== localDateKey()) { state = loadRound(); render(); showToast("A new daily puzzle is ready"); } }
     function init() {
       applyWordList(prefs.length); applyPrefs(); $("contrastSwitch").setAttribute("aria-checked", String(Boolean(prefs.contrast)));
       loadStats(selectedLength);
-      state = loadDaily(); render();
+      state = loadRound(); render();
       keyboardEl.addEventListener("click", event => { const button = event.target.closest("button[data-key]"); if (button) inputKey(button.dataset.key); });
       document.addEventListener("keydown", event => { if (modalId) { if (event.key === "Escape" && modalId !== "resultModal") { closeModal(); return; } if (event.key === "Tab") { const modal = $(modalId).querySelector(".modal"); const focusable = [...modal.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")].filter(node => !node.disabled); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } return; } if (/^[a-zA-Z]$/.test(event.key)) { event.preventDefault(); inputKey(event.key.toUpperCase()); } else if (event.key === "Enter" || event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); inputKey(event.key === "Enter" ? "ENTER" : "BACK"); } });
-      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("modeButton").addEventListener("click", switchMode); $("newGameButton").addEventListener("click", startPractice); $("shareButton").addEventListener("click", copyResult); $("resultContinue").addEventListener("click", () => { closeModal("resultModal"); switchMode(); }); $("brandLink").addEventListener("click", event => { event.preventDefault(); if (state.mode !== "daily") { state = loadDaily(); render(); } });
+      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("brandLink").addEventListener("click", event => event.preventDefault());
       document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
       document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => { if (event.target === backdrop && backdrop.id !== "resultModal") closeModal(backdrop.id); }));
-      setInterval(() => { checkNewDay(); updateCountdown(); }, 1000);
+      setInterval(checkNewDay, 1000);
     }
     loadWordLists().then(init).catch(() => { statusEl.textContent = "Word list unavailable. Please open Infinite Wordle through GitHub Pages."; });
   

@@ -26,10 +26,10 @@ Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md]
 - Implement all functional, accessibility, and acceptance requirements in `PRODUCT_DESIGN.md`.
 - Implement duplicate-letter scoring with a two-pass algorithm: exact matches first, then remaining present matches while consuming answer-letter counts.
 - Make physical and virtual keyboard behavior consistent. Key colors must only upgrade in priority: correct > present > absent.
-- Persist/resume only the daily game; keep practice sessions separate and do not let practice alter daily streak statistics.
+- Persist/resume one active round per length. The first round opened on a new local day uses the deterministic daily answer; New word starts a persisted random answer, with no separate practice mode or daily-only statistics.
 - Use an ARIA live region, visible focus styles, modal focus management, and a reduced-motion fallback.
-- Expose a visible New word control that starts a fresh practice answer at any time without changing daily state or daily statistics.
-- Expose a top-bar selector for 4-, 5-, 6-, and 7-letter modes. Switching length must update board columns, row count, input limits, scoring, dictionaries, daily answer selection, and length-specific persistence/statistics without cross-contamination. 7-letter mode must allow 10 guesses; all other modes allow 6.
+- Expose a visible New word control that replaces the active answer and persists it across reloads until completion or another replacement.
+- Expose a top-bar selector for 4-, 5-, 6-, and 7-letter modes. Switching length must update board columns, row count, input limits, scoring, dictionaries, answer selection, and length-specific persistence/statistics without cross-contamination. 7-letter mode must allow 10 guesses; all other modes allow 6.
 
 ## Validation workflow
 
@@ -41,7 +41,7 @@ Before handoff, perform proportionate validation without adding test infrastruct
 4. Exercise ordinary common-word guesses (including plural nouns and third-person verbs such as `PEARS` and `LOOKS` in five-letter mode) so the allow-list is not accidentally too narrow.
 5. Exercise standard dictionary words outside the curated solutions (for example `CATER` in five-letter mode) and ensure they are accepted.
 6. Exercise at least two duplicate-letter scoring examples, including an answer with fewer repeated letters than the guess.
-7. Verify win and loss paths, virtual and physical input, reload persistence, mode switching, New word behavior, share output, and stats update behavior.
+7. Verify win and loss paths, virtual and physical input, reload persistence, length switching, New word behavior, share output, and stats update behavior.
 8. Check a narrow mobile viewport (~320px) and reduced-motion styling in all four lengths, including the 10-row 7-letter board.
 9. Check representative 375–430px phone, 768px tablet portrait and landscape, and 1024px+ desktop viewports for clipping, overlap, and horizontal overflow.
 10. Confirm no external URLs, missing assets, or unhandled word-list load errors are required; same-site relative requests are expected.

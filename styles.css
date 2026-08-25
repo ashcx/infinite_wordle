@@ -247,7 +247,6 @@
     .switch::after { content: ""; display: block; width: 20px; height: 20px; background: var(--surface); border-radius: 50%; transition: transform .18s; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
     .switch[aria-checked="true"] { background: var(--accent); border-color: var(--accent); }
     .switch[aria-checked="true"]::after { transform: translateX(20px); }
-    .countdown { font-variant-numeric: tabular-nums; font-weight: 850; color: var(--text); }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 
     @media (min-width: 600px) {
@@ -276,9 +275,6 @@
       .top-actions { flex: 1 1 100%; justify-content: flex-end; }
     }
     @media (max-width: 374px) {
-      .game-heading { align-items: flex-start; flex-direction: column; }
-      .heading-actions { width: 100%; justify-content: flex-start; }
-      .heading-actions .mode-button { flex: 1 1 auto; }
       .keyboard-wrap { width: calc(100% + 12px); flex-shrink: 0; margin-inline: -6px; padding-top: 14px; }
       .keyboard { gap: 6px; }
       .key { border-radius: 10px; }
