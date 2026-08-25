@@ -257,6 +257,8 @@
     }
     [data-length="4"] { --word-length: 4; --tile-size: clamp(52px, 15vw, 72px); }
     [data-length="6"] { --word-length: 6; --tile-size: clamp(42px, 12vw, 62px); }
+    [data-length="7"] { --word-length: 7; --tile-size: clamp(36px, 9vw, 56px); }
+    [data-length="7"] .tile { font-size: clamp(1rem, 5.5vw, 1.55rem); }
     @media (min-width: 768px) {
       .topbar { padding-inline: max(28px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-left)); }
       .game-wrap { padding-top: 32px; }

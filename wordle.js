@@ -4,11 +4,13 @@
       common, everyday English; it is not a frequency-ranked dictionary.
       Daily index = local calendar days since 2024-01-01 modulo answer count.
     */
-    const WORD_LENGTHS = [4, 5, 6];
+    const WORD_LENGTHS = [4, 5, 6, 7];
+    const MAX_GUESSES_BY_LENGTH = { 7: 10 };
     const WORD_LIST_URLS = {
       4: { solutions: "data/solutions-4.txt", accepted: "data/accepted-4.txt" },
       5: { solutions: "data/solutions.txt", accepted: "data/accepted-words.txt" },
-      6: { solutions: "data/solutions-6.txt", accepted: "data/accepted-6.txt" }
+      6: { solutions: "data/solutions-6.txt", accepted: "data/accepted-6.txt" },
+      7: { solutions: "data/solutions-7.txt", accepted: "data/accepted-7.txt" }
     };
     let wordLists = {};
     let selectedLength = 5;
@@ -27,7 +29,8 @@
     const KEY_RANK = { absent: 1, present: 2, correct: 3 };
     const STORAGE = { daily: "single-file-word-game:v2:daily", stats: "single-file-word-game:v2:stats", prefs: "single-file-word-game:v2:prefs" };
     const EPOCH_UTC = Date.UTC(2024, 0, 1);
-    const DEFAULT_STATS = () => ({ played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: [0,0,0,0,0,0], lastWinDate: null, lastPlayedDate: null });
+    function maxGuesses(length = selectedLength) { return MAX_GUESSES_BY_LENGTH[length] || 6; }
+    const DEFAULT_STATS = (length = selectedLength) => ({ played: 0, wins: 0, currentStreak: 0, maxStreak: 0, distribution: Array(maxGuesses(length)).fill(0), lastWinDate: null, lastPlayedDate: null });
     const $ = id => document.getElementById(id);
     const boardEl = $("board"), keyboardEl = $("keyboard"), statusEl = $("status"), toastEl = $("toast");
     let state;
@@ -72,9 +75,9 @@
       try { const value = JSON.parse(localStorage.getItem(key)); return value && typeof value === "object" ? value : fallback; } catch (_) { return fallback; }
     }
     function writeJson(key, value) { try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) { /* offline/session-only fallback */ } }
-    function normalizeStats(value) {
-      const fallback = DEFAULT_STATS();
-      return { played: Number.isFinite(value && value.played) ? Math.max(0, value.played) : 0, wins: Number.isFinite(value && value.wins) ? Math.max(0, value.wins) : 0, currentStreak: Number.isFinite(value && value.currentStreak) ? Math.max(0, value.currentStreak) : 0, maxStreak: Number.isFinite(value && value.maxStreak) ? Math.max(0, value.maxStreak) : 0, distribution: Array.isArray(value && value.distribution) && value.distribution.length === 6 ? value.distribution.map(number => Number.isFinite(number) ? Math.max(0, number) : 0) : fallback.distribution, lastWinDate: typeof (value && value.lastWinDate) === "string" ? value.lastWinDate : null, lastPlayedDate: typeof (value && value.lastPlayedDate) === "string" ? value.lastPlayedDate : null };
+    function normalizeStats(value, length = selectedLength) {
+      const fallback = DEFAULT_STATS(length);
+      return { played: Number.isFinite(value && value.played) ? Math.max(0, value.played) : 0, wins: Number.isFinite(value && value.wins) ? Math.max(0, value.wins) : 0, currentStreak: Number.isFinite(value && value.currentStreak) ? Math.max(0, value.currentStreak) : 0, maxStreak: Number.isFinite(value && value.maxStreak) ? Math.max(0, value.maxStreak) : 0, distribution: Array.isArray(value && value.distribution) && value.distribution.length === maxGuesses(length) ? value.distribution.map(number => Number.isFinite(number) ? Math.max(0, number) : 0) : fallback.distribution, lastWinDate: typeof (value && value.lastWinDate) === "string" ? value.lastWinDate : null, lastPlayedDate: typeof (value && value.lastPlayedDate) === "string" ? value.lastPlayedDate : null };
     }
     function normalizePrefs(value) { return { theme: value && value.theme === "dark" ? "dark" : "light", contrast: Boolean(value && value.contrast), length: WORD_LENGTHS.includes(Number(value && value.length)) ? Number(value.length) : 5 }; }
     function localDateKey(date = new Date()) { return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,"0")}-${String(date.getDate()).padStart(2,"0")}`; }
@@ -84,17 +87,17 @@
     function newGame(mode, answer) { return { mode, length: selectedLength, dateKey: mode === "daily" ? localDateKey() : null, answer, guesses: [], current: "", status: "playing", scored: [], animatingRow: null }; }
     function isValidGuess(value) { const pattern = new RegExp(`^[A-Z]{${selectedLength}}$`); return typeof value === "string" && pattern.test(value) && ALLOWED.has(value); }
     function isValidScore(value) { return Array.isArray(value) && value.length === selectedLength && value.every(outcome => outcome === "correct" || outcome === "present" || outcome === "absent"); }
-    function loadStats(length = selectedLength) { stats = normalizeStats(readJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS())); }
+    function loadStats(length = selectedLength) { stats = normalizeStats(readJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS(length)), length); }
     function loadDaily() {
       const today = localDateKey();
       const saved = readJson(lengthStorageKey(STORAGE.daily), null);
       if (saved && saved.length === selectedLength && saved.dateKey === today && SOLUTIONS.includes(saved.answer) && Array.isArray(saved.guesses) && Array.isArray(saved.scored)) {
-        const guesses = saved.guesses.slice(0, 6);
-        const scored = saved.scored.slice(0, 6);
+        const guesses = saved.guesses.slice(0, maxGuesses(selectedLength));
+        const scored = saved.scored.slice(0, maxGuesses(selectedLength));
         const current = typeof saved.current === "string" && new RegExp(`^[A-Z]{0,${selectedLength}}$`).test(saved.current) ? saved.current : "";
         const status = saved.status === "won" || saved.status === "lost" ? saved.status : "playing";
         if (guesses.length === scored.length && guesses.every(isValidGuess) && scored.every(isValidScore)) {
-          return { ...newGame("daily", saved.answer), mode: "daily", length: selectedLength, dateKey: today, answer: saved.answer, guesses, current: status === "playing" && guesses.length < 6 ? current : "", status: status === "playing" && guesses.length >= 6 ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
+          return { ...newGame("daily", saved.answer), mode: "daily", length: selectedLength, dateKey: today, answer: saved.answer, guesses, current: status === "playing" && guesses.length < maxGuesses(selectedLength) ? current : "", status: status === "playing" && guesses.length >= maxGuesses(selectedLength) ? "lost" : status, scored, counted: Boolean(saved.counted), animatingRow: null };
         }
       }
       const fresh = newGame("daily", SOLUTIONS[getDailyPuzzleIndex()]);
@@ -119,8 +122,8 @@
     function tileLabel(letter, result) { return result ? `${letter}, ${result}` : (letter ? `${letter}, not scored` : "empty"); }
     function renderBoard() {
       boardEl.innerHTML = "";
-      boardEl.setAttribute("aria-label", `Six guesses, ${state.length} letters each`);
-      for (let row = 0; row < 6; row++) {
+      boardEl.setAttribute("aria-label", `${maxGuesses(state.length)} guesses, ${state.length} letters each`);
+      for (let row = 0; row < maxGuesses(state.length); row++) {
         const guess = state.guesses[row] || (row === state.guesses.length && state.status === "playing" ? state.current : "");
         const result = state.scored[row] || [];
         for (let col = 0; col < state.length; col++) {
@@ -172,7 +175,7 @@
       $("newGameButton").textContent = state.mode === "daily" ? "New practice word" : "New word";
       $("modeButton").textContent = state.mode === "daily" ? "Try practice" : "Back to daily";
       renderBoard(); renderKeyboard();
-      if (state.status === "playing") statusEl.textContent = `${6 - state.guesses.length} ${6 - state.guesses.length === 1 ? "guess" : "guesses"} left`;
+      if (state.status === "playing") statusEl.textContent = `${maxGuesses(state.length) - state.guesses.length} ${maxGuesses(state.length) - state.guesses.length === 1 ? "guess" : "guesses"} left`;
       else statusEl.textContent = state.status === "won" ? "Solved" : `The word was ${state.answer}`;
     }
     function showToast(message) {
@@ -195,7 +198,7 @@
       const finish = () => {
         state.scoring = false; state.animatingRow = null;
         if (guess === state.answer) { state.status = "won"; onDailyComplete(); }
-        else if (state.guesses.length === 6) { state.status = "lost"; onDailyComplete(); }
+        else if (state.guesses.length === maxGuesses(state.length)) { state.status = "lost"; onDailyComplete(); }
         if (state.mode === "daily") saveDaily();
         render();
         if (state.status !== "playing") {
@@ -228,7 +231,7 @@
       stats.lastPlayedDate = today; writeJson(lengthStorageKey(STORAGE.stats, state.length), stats);
     }
     function resultGrid() { return state.scored.map(row => row.map(x => x === "correct" ? "🟩" : x === "present" ? "🟨" : "⬛").join("")).join("\n"); }
-    function shareText() { return `Infinite Wordle ${state.length} ${state.status === "won" ? state.guesses.length : "X"}/6\n\n${resultGrid()}`; }
+    function shareText() { return `Infinite Wordle ${state.length} ${state.status === "won" ? state.guesses.length : "X"}/${maxGuesses(state.length)}\n\n${resultGrid()}`; }
     async function copyResult() {
       const text = shareText();
       try { await navigator.clipboard.writeText(text); showToast("Result copied"); $("shareButton").textContent = "Copied"; }

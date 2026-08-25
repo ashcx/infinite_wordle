@@ -2,7 +2,7 @@
 
 ## Mission
 
-Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus six same-site word-list files it loads at runtime for 4-, 5-, and 6-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
+Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md](PRODUCT_DESIGN.md). Deliver it as a semantic `WORDLE.html` shell, external `styles.css` and `wordle.js` assets, plus eight same-site word-list files it loads at runtime for 4-, 5-, 6-, and 7-letter modes. Do not require user decisions unless a request conflicts with this guide or introduces a material new product scope.
 
 ## Authority and scope
 
@@ -15,7 +15,7 @@ Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md]
 
 - Use vanilla HTML, CSS, and modern browser JavaScript. Keep semantic markup in `WORDLE.html`, presentation in `styles.css`, and behavior in `wordle.js` using standard external-asset conventions.
 - Use original, accessible system-font styling and inline SVG only when an icon is needed.
-- Maintain two text-file vocabularies per length in `data/`: a full accepted dictionary (from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot, filtered to unique alphabetic entries of that length) and a separate solution list. `WORDLE.html` loads all six from relative same-site paths at runtime. Ensure all solutions are in the matching accepted dictionary. Curate solutions for broad everyday familiarity; reject technical, archaic, obscure, specialist, dialect-only, or unusually challenging words from solution lists. Do not narrow accepted dictionaries merely because a word is too obscure to be a solution.
+- Maintain two text-file vocabularies per length in `data/`: a full accepted dictionary (from the downloaded `dwyl/english-words` `words_alpha.txt` snapshot, filtered to unique alphabetic entries of that length) and a separate solution list. `WORDLE.html` loads all eight from relative same-site paths at runtime. Ensure all solutions are in the matching accepted dictionary. Curate solutions for broad everyday familiarity; reject technical, archaic, obscure, specialist, dialect-only, or unusually challenging words from solution lists. Do not narrow accepted dictionaries merely because a word is too obscure to be a solution.
 - Use local date components, a fixed documented epoch, and modulo solution-list length for daily selection.
 - Namespace and version `localStorage` keys (for example `single-file-word-game:v1:*`). Treat parsing/storage failures as recoverable.
 - Favor readable small functions and constants over clever abstractions. No framework is necessary.
@@ -29,20 +29,20 @@ Build the production-ready Infinite Wordle game described in [PRODUCT_DESIGN.md]
 - Persist/resume only the daily game; keep practice sessions separate and do not let practice alter daily streak statistics.
 - Use an ARIA live region, visible focus styles, modal focus management, and a reduced-motion fallback.
 - Expose a visible New word control that starts a fresh practice answer at any time without changing daily state or daily statistics.
-- Expose a top-bar selector for 4-, 5-, and 6-letter modes. Switching length must update board columns, input limits, scoring, dictionaries, daily answer selection, and length-specific persistence/statistics without cross-contamination.
+- Expose a top-bar selector for 4-, 5-, 6-, and 7-letter modes. Switching length must update board columns, row count, input limits, scoring, dictionaries, daily answer selection, and length-specific persistence/statistics without cross-contamination. 7-letter mode must allow 10 guesses; all other modes allow 6.
 
 ## Validation workflow
 
 Before handoff, perform proportionate validation without adding test infrastructure unless it remains self-contained:
 
 1. Parse/check the HTML and inspect it in a browser if an available browser tool permits.
-2. Serve the repository over HTTP (or inspect the GitHub Pages preview) and verify all six relative word-list requests succeed before the board becomes active.
+2. Serve the repository over HTTP (or inspect the GitHub Pages preview) and verify all eight relative word-list requests succeed before the board becomes active.
 3. Exercise incomplete and invalid guesses; ensure rows do not advance.
 4. Exercise ordinary common-word guesses (including plural nouns and third-person verbs such as `PEARS` and `LOOKS` in five-letter mode) so the allow-list is not accidentally too narrow.
 5. Exercise standard dictionary words outside the curated solutions (for example `CATER` in five-letter mode) and ensure they are accepted.
 6. Exercise at least two duplicate-letter scoring examples, including an answer with fewer repeated letters than the guess.
 7. Verify win and loss paths, virtual and physical input, reload persistence, mode switching, New word behavior, share output, and stats update behavior.
-8. Check a narrow mobile viewport (~320px) and reduced-motion styling in all three lengths.
+8. Check a narrow mobile viewport (~320px) and reduced-motion styling in all four lengths, including the 10-row 7-letter board.
 9. Check representative 375–430px phone, 768px tablet portrait and landscape, and 1024px+ desktop viewports for clipping, overlap, and horizontal overflow.
 10. Confirm no external URLs, missing assets, or unhandled word-list load errors are required; same-site relative requests are expected.
 
@@ -50,4 +50,4 @@ Record any limitations plainly in the final handoff. Do not claim tests or brows
 
 ## Definition of done
 
-The work is complete when the GitHub Pages site loads `WORDLE.html`, `styles.css`, `wordle.js`, and all six word-list files, meets the acceptance checklist in the design document, and has been validated according to the workflow above. Summarize files changed and validation results in the final response.
+The work is complete when the GitHub Pages site loads `WORDLE.html`, `styles.css`, `wordle.js`, and all eight word-list files, meets the acceptance checklist in the design document, and has been validated according to the workflow above. Summarize files changed and validation results in the final response.
