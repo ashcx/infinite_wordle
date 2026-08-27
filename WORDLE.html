@@ -7,8 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232857c7'/%3E%3Cpath d='M16 16h32v32H16z' fill='none' stroke='white' stroke-width='6'/%3E%3C/svg%3E">
   <title>Infinite Wordle — 3- through 8-letter word games</title>
   <!-- Bump the asset version when shipping behavior or styling changes so browsers do not reuse stale Pages assets. -->
-  <link rel="stylesheet" href="styles.css?v=20260827-3">
-  <script src="wordle.js?v=20260827-3" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20260827-4">
+  <script src="wordle.js?v=20260827-4" defer></script>
 </head>
 <body>
   <div class="app-shell" id="app">
@@ -75,6 +75,7 @@
         <p>Totals for every word length, saved in this browser. Select a length for detailed metrics.</p>
         <div class="overview-head" aria-hidden="true"><span>Length</span><span>Played</span><span>Win&nbsp;%</span><span>Streak</span><span>Best</span><span></span></div>
         <div class="stats-overview" id="statsOverviewRows"></div>
+        <div class="stats-actions"><button class="danger-button" id="resetStatsButton" type="button">Reset all stats</button></div>
       </div>
       <div id="statsDetailView" hidden>
         <button class="mode-button stats-back-button" id="statsBackButton" type="button">‹ All lengths</button>
@@ -97,6 +98,15 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" id="resetStatsModal" hidden>
+    <section class="modal" role="dialog" aria-modal="true" aria-labelledby="resetStatsTitle" aria-describedby="resetStatsDescription" tabindex="-1">
+      <button class="modal-close" type="button" data-close="resetStatsModal" aria-label="Close reset statistics confirmation">×</button>
+      <h2 id="resetStatsTitle">Reset all statistics?</h2>
+      <p id="resetStatsDescription">Warning: this permanently resets all scores for every word length, including games played, wins, streaks, medals, and guess distributions. This cannot be undone. Your current board and preferences will stay unchanged.</p>
+      <div class="modal-actions"><button class="secondary" type="button" data-close="resetStatsModal">Cancel</button><button class="danger-button" id="confirmResetStatsButton" type="button">Delete all stats</button></div>
+    </section>
+  </div>
+
   <div class="modal-backdrop" id="resultModal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="resultTitle" tabindex="-1">
       <button class="modal-close" type="button" data-close="resultModal" aria-label="Close result">×</button>
@@ -113,7 +123,7 @@
       <button class="modal-close" type="button" data-close="medalModal" aria-label="Close celebration">×</button>
       <div class="confetti" id="confetti" aria-hidden="true"></div>
       <div class="medal-emoji" aria-hidden="true">🏅</div>
-      <h2 id="medalTitle">Gold medal!</h2>
+      <h2 id="medalTitle">Amazing work!</h2>
       <p id="medalText"></p>
       <div class="modal-actions medal-actions"><button class="primary" id="medalContinueButton" type="button">View result</button></div>
     </section>

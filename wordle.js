@@ -312,6 +312,20 @@
       statsGridMarkup(entry);
       $("statsBackButton").focus();
     }
+    function resetAllStats() {
+      if (state && state.scoring) return;
+      WORD_LENGTHS.forEach(length => writeJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS(length)));
+      loadStats(selectedLength);
+      medalCelebrationPending = false;
+      renderStats();
+      showStatsOverview();
+      closeModal("resetStatsModal");
+      showToast("All statistics reset");
+    }
+    function requestResetStats() {
+      if (state && state.scoring) return;
+      openModal("resetStatsModal");
+    }
     function openResult() {
       const win = state.status === "won";
       $("resultTitle").textContent = win ? "Nice solve" : "Round over";
@@ -336,7 +350,14 @@
       $("confetti").replaceChildren(...pieces);
     }
     function openMedalCelebration() {
-      $("medalText").textContent = `Congratulations! You have solved ${stats.wins} of your ${stats.played} ${state.length}-letter rounds — a win rate above 90%. Enjoy your moment on the podium.`;
+      const medalMessages = [
+        { title: "Amazing work!", description: `You’ve won ${stats.wins} of ${stats.played} ${state.length}-letter games — that’s a ${winRate(stats)}% win rate. Your gold medal is well deserved!` },
+        { title: "What a run!", description: `${stats.wins} wins out of ${stats.played} ${state.length}-letter games gives you a ${winRate(stats)}% win rate. Gold medal earned!` },
+        { title: "You’re on fire!", description: `You’ve won ${stats.wins} of ${stats.played} ${state.length}-letter games for a ${winRate(stats)}% win rate. Take a bow!` }
+      ];
+      const message = medalMessages[Math.floor(Math.random() * medalMessages.length)];
+      $("medalTitle").textContent = message.title;
+      $("medalText").textContent = message.description;
       openModal("medalModal");
       launchConfetti();
     }
@@ -386,7 +407,7 @@
       state = loadRound(); render();
       keyboardEl.addEventListener("click", event => { const button = event.target.closest("button[data-key]"); if (button) inputKey(button.dataset.key); });
       document.addEventListener("keydown", event => { if (modalId) { if (event.key === "Escape" && modalId !== "resultModal") { closeModal(); return; } if (event.key === "Tab") { const modal = $(modalId).querySelector(".modal"); const focusable = [...modal.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")].filter(node => !node.disabled); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } return; } if (/^[a-zA-Z]$/.test(event.key)) { event.preventDefault(); inputKey(event.key.toUpperCase()); } else if (event.key === "Enter" || event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); inputKey(event.key === "Enter" ? "ENTER" : "BACK"); } });
-      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { showStatsOverview(); openModal("statsModal"); }); $("statsOverviewRows").addEventListener("click", event => { const row = event.target.closest("button[data-length]"); if (row) openStatsDetail(Number(row.dataset.length)); }); $("statsBackButton").addEventListener("click", () => showStatsOverview(statsDetailLength)); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("resetButton").addEventListener("click", requestReset); $("confirmResetButton").addEventListener("click", confirmReset); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("medalContinueButton").addEventListener("click", () => { closeModal("medalModal"); openResult(); }); $("brandLink").addEventListener("click", event => event.preventDefault());
+      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { showStatsOverview(); openModal("statsModal"); }); $("statsOverviewRows").addEventListener("click", event => { const row = event.target.closest("button[data-length]"); if (row) openStatsDetail(Number(row.dataset.length)); }); $("statsBackButton").addEventListener("click", () => showStatsOverview(statsDetailLength)); $("resetStatsButton").addEventListener("click", requestResetStats); $("confirmResetStatsButton").addEventListener("click", resetAllStats); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("resetButton").addEventListener("click", requestReset); $("confirmResetButton").addEventListener("click", confirmReset); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("medalContinueButton").addEventListener("click", () => { closeModal("medalModal"); openResult(); }); $("brandLink").addEventListener("click", event => event.preventDefault());
       document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
       document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => { if (event.target === backdrop && backdrop.id !== "resultModal") closeModal(backdrop.id); }));
       setInterval(checkNewDay, 1000);

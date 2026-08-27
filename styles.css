@@ -233,6 +233,10 @@
     .primary { border: 1px solid var(--accent); background: var(--accent); color: #fff; }
     .secondary { border: 1px solid var(--line); background: var(--surface); color: var(--text); }
     .primary:hover, .secondary:hover { filter: brightness(.97); }
+    .stats-actions { display: flex; justify-content: flex-end; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--line); }
+    .danger-button { min-height: 44px; border: 1px solid #b23b4b; border-radius: 10px; background: #b23b4b; color: #fff; padding: 8px 14px; font-weight: 800; cursor: pointer; }
+    .danger-button:hover:not(:disabled) { filter: brightness(.94); }
+    .danger-button:disabled { cursor: not-allowed; opacity: .48; }
     .result-word { font-size: 1.65rem; letter-spacing: .14em; font-weight: 900; margin: 15px 0; }
     .result-label { color: var(--muted); font-size: .88rem; text-transform: uppercase; letter-spacing: .1em; font-weight: 850; }
     .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; margin: 18px 0; text-align: center; }
