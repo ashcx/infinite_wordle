@@ -7,8 +7,8 @@
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%232857c7'/%3E%3Cpath d='M16 16h32v32H16z' fill='none' stroke='white' stroke-width='6'/%3E%3C/svg%3E">
   <title>Infinite Wordle — 3- through 8-letter word games</title>
   <!-- Bump the asset version when shipping behavior or styling changes so browsers do not reuse stale Pages assets. -->
-  <link rel="stylesheet" href="styles.css?v=20260825-2">
-  <script src="wordle.js?v=20260825-2" defer></script>
+  <link rel="stylesheet" href="styles.css?v=20260827-3">
+  <script src="wordle.js?v=20260827-3" defer></script>
 </head>
 <body>
   <div class="app-shell" id="app">
@@ -55,7 +55,6 @@
       <p>Find the hidden word in 6 tries for 3- through 6-letter modes, or 10 tries for 7- and 8-letter modes. Choose a game length from the top bar. Each guess must be a valid English word of the selected length.</p>
       <p>When you first open the game each day, the selected length starts with that day's curated word. Press <strong>New word</strong> whenever you want a fresh word; it stays in place across reloads until you solve it, run out of guesses, or start another word.</p>
       <p><strong>Reset board</strong> clears the board while keeping the same target word. Resetting a completed round lets you replay it without counting the replay as another statistic.</p>
-      <p>The daily word is deterministic: the local calendar date is counted from a fixed 1 January 2024 epoch, then wrapped with modulo arithmetic over the selected length's curated answer list.</p>
       <div class="legend">
         <div class="legend-item"><span class="legend-swatch correct">A</span><span><strong>Correct</strong> — right letter, right place.</span></div>
         <div class="legend-item"><span class="legend-swatch present">A</span><span><strong>Present</strong> — right letter, different place.</span></div>
@@ -71,11 +70,21 @@
   <div class="modal-backdrop" id="statsModal" hidden>
     <section class="modal" role="dialog" aria-modal="true" aria-labelledby="statsTitle" tabindex="-1">
       <button class="modal-close" type="button" data-close="statsModal" aria-label="Close statistics">×</button>
-      <h2 id="statsTitle">Statistics</h2>
-      <p>Results for this word length, including words started with New word.</p>
-      <div class="stats-grid" id="statsGrid"></div>
-      <div class="result-label">Guess distribution</div>
-      <div class="distribution" id="distribution"></div>
+      <div id="statsOverviewView">
+        <h2 id="statsTitle">Statistics</h2>
+        <p>Totals for every word length, saved in this browser. Select a length for detailed metrics.</p>
+        <div class="overview-head" aria-hidden="true"><span>Length</span><span>Played</span><span>Win&nbsp;%</span><span>Streak</span><span>Best</span><span></span></div>
+        <div class="stats-overview" id="statsOverviewRows"></div>
+      </div>
+      <div id="statsDetailView" hidden>
+        <button class="mode-button stats-back-button" id="statsBackButton" type="button">‹ All lengths</button>
+        <h2 id="statsDetailTitle">5 letters</h2>
+        <p>Results for this word length, including words started with New word.</p>
+        <div class="stats-grid" id="statsGrid"></div>
+        <p class="stats-extra" id="statsExtra"></p>
+        <div class="result-label">Guess distribution</div>
+        <div class="distribution" id="distribution"></div>
+      </div>
     </section>
   </div>
 
@@ -96,6 +105,17 @@
       <div class="stats-grid" id="resultStats"></div>
       <p id="nextPuzzle"></p>
       <div class="modal-actions"><button class="primary" id="shareButton" type="button">Copy result</button><button class="secondary" id="resultNewWord" type="button">New word</button></div>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="medalModal" hidden>
+    <section class="modal medal-modal" role="dialog" aria-modal="true" aria-labelledby="medalTitle" tabindex="-1">
+      <button class="modal-close" type="button" data-close="medalModal" aria-label="Close celebration">×</button>
+      <div class="confetti" id="confetti" aria-hidden="true"></div>
+      <div class="medal-emoji" aria-hidden="true">🏅</div>
+      <h2 id="medalTitle">Gold medal!</h2>
+      <p id="medalText"></p>
+      <div class="modal-actions medal-actions"><button class="primary" id="medalContinueButton" type="button">View result</button></div>
     </section>
   </div>
 

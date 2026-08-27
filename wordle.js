@@ -29,6 +29,7 @@
     let ALLOWED = new Set();
     const KEY_ROWS = [["Q","W","E","R","T","Y","U","I","O","P"],["A","S","D","F","G","H","J","K","L"],["ENTER","Z","X","C","V","B","N","M","BACK"]];
     const KEY_RANK = { absent: 1, present: 2, correct: 3 };
+    const MEDAL_MIN_PLAYED = 10;
     const STORAGE = { round: "single-file-word-game:v3:round", legacyDaily: "single-file-word-game:v2:daily", stats: "single-file-word-game:v3:stats", prefs: "single-file-word-game:v2:prefs" };
     const EPOCH_UTC = Date.UTC(2024, 0, 1);
     function maxGuesses(length = selectedLength) { return MAX_GUESSES_BY_LENGTH[length] || 6; }
@@ -41,6 +42,7 @@
     let toastTimer = null;
     let modalId = null;
     let modalReturnFocus = null;
+    let medalCelebrationPending = false;
 
     function parseWordList(text, length) {
       const pattern = new RegExp(`^[A-Z]{${length}}$`);
@@ -217,10 +219,15 @@
         else if (state.guesses.length === maxGuesses(state.length)) { state.status = "lost"; onRoundComplete(); }
         saveRound();
         render();
-        if (state.status !== "playing") {
-          setStatus(state.status === "won" ? "You solved it!" : `The answer was ${state.answer}`);
-          setTimeout(() => openResult(), 280);
-        }
+      if (state.status !== "playing") {
+        setStatus(state.status === "won" ? "You solved it!" : `The answer was ${state.answer}`);
+        const completedRound = state;
+        setTimeout(() => {
+          if (state !== completedRound) { medalCelebrationPending = false; return; }
+          if (medalCelebrationPending) { medalCelebrationPending = false; openMedalCelebration(); }
+          else openResult();
+        }, 280);
+      }
       };
       setTimeout(finish, window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 30 : 680);
     }
@@ -236,6 +243,7 @@
     }
     function onRoundComplete() {
       if (state.counted) return;
+      const hadMedal = medalQualifies(stats);
       state.counted = true;
       stats.played++;
       const today = localDateKey();
@@ -245,6 +253,7 @@
         stats.maxStreak = Math.max(stats.maxStreak, stats.currentStreak); stats.lastWinDate = today;
       } else stats.currentStreak = 0;
       stats.lastPlayedDate = localDateKey(); writeJson(lengthStorageKey(STORAGE.stats, state.length), stats);
+      if (!hadMedal && medalQualifies(stats)) medalCelebrationPending = true;
     }
     function resultGrid() { return state.scored.map(row => row.map(x => x === "correct" ? "🟩" : x === "present" ? "🟨" : "⬛").join("")).join("\n"); }
     function shareText() { return `Infinite Wordle ${state.length} ${state.status === "won" ? state.guesses.length : "X"}/${maxGuesses(state.length)}\n\n${resultGrid()}`; }
@@ -256,16 +265,52 @@
         try { document.execCommand("copy"); showToast("Result copied"); $("shareButton").textContent = "Copied"; } catch (__) { showToast("Copy unavailable — select the result manually"); } area.remove();
       }
     }
-    function statsMarkup(target) {
-      const values = [[stats.played,"Played"],[stats.wins,"Wins"],[stats.currentStreak,"Streak"],[stats.maxStreak,"Best"]];
+    function statsMarkup(target, source = stats) {
+      const values = [[source.played,"Played"],[source.wins,"Wins"],[source.currentStreak,"Streak"],[source.maxStreak,"Best"]];
       target.innerHTML = values.map(([value,label]) => `<div><div class="stat-value">${value}</div><div class="stat-label">${label}</div></div>`).join("");
     }
     function renderStats() {
-      statsGridMarkup(); statsMarkup($("resultStats"));
+      statsGridMarkup(stats); statsMarkup($("resultStats"));
     }
-    function statsGridMarkup() {
-      statsMarkup($("statsGrid")); const max = Math.max(1, ...stats.distribution);
-      $("distribution").innerHTML = stats.distribution.map((value, i) => `<div class="dist-row"><span>${i+1}</span><span class="dist-bar" style="width:${Math.max(8, value / max * 100)}%">${value}</span></div>`).join("");
+    function statsGridMarkup(source = stats) {
+      statsMarkup($("statsGrid"), source);
+      const max = Math.max(1, ...source.distribution);
+      $("distribution").innerHTML = source.distribution.map((value, i) => `<div class="dist-row"><span>${i+1}</span><span class="dist-bar" style="width:${Math.max(8, value / max * 100)}%">${value}</span></div>`).join("");
+    }
+    function storedStats(length) { return normalizeStats(readJson(lengthStorageKey(STORAGE.stats, length), DEFAULT_STATS(length)), length); }
+    function winRate(source) { return source.played ? Math.round(source.wins / source.played * 100) : 0; }
+    function medalQualifies(source) { return source.played >= MEDAL_MIN_PLAYED && source.wins / source.played > 0.9; }
+    function averageSolveGuesses(source) {
+      const solvedGuesses = source.distribution.reduce((total, count, index) => total + count * (index + 1), 0);
+      return source.wins ? (solvedGuesses / source.wins).toFixed(1) : "—";
+    }
+    let statsDetailLength = null;
+    function showStatsOverview(refocusLength = null) {
+      statsDetailLength = null;
+      $("statsDetailView").hidden = true;
+      $("statsOverviewView").hidden = false;
+      $("statsOverviewRows").innerHTML = WORD_LENGTHS.map(length => {
+        const entry = storedStats(length);
+        const rate = winRate(entry);
+        const medal = medalQualifies(entry);
+        return `<button type="button" class="overview-row" data-length="${length}" aria-label="${length}-letter statistics: ${entry.played} played, ${rate}% win rate, current streak ${entry.currentStreak}, best streak ${entry.maxStreak}${medal ? ", gold medal" : ""}. View details"><span class="ov-len"><span class="ov-num">${length}</span>${medal ? '<span class="ov-medal" aria-hidden="true">🏅</span>' : ""}</span><span>${entry.played}</span><span>${rate}%</span><span>${entry.currentStreak}</span><span>${entry.maxStreak}</span><span class="ov-chevron" aria-hidden="true">›</span></button>`;
+      }).join("");
+      if (refocusLength) {
+        const row = $("statsOverviewRows").querySelector(`button[data-length="${refocusLength}"]`);
+        if (row) row.focus();
+      }
+    }
+    function openStatsDetail(length) {
+      if (!WORD_LENGTHS.includes(length)) return;
+      statsDetailLength = length;
+      const entry = storedStats(length);
+      $("statsOverviewView").hidden = true;
+      const view = $("statsDetailView");
+      view.hidden = false;
+      $("statsDetailTitle").textContent = `${length} letters${medalQualifies(entry) ? " 🏅" : ""}`;
+      $("statsExtra").textContent = `Win rate ${winRate(entry)}%` + (entry.wins ? ` · Average solve ${averageSolveGuesses(entry)} guesses` : " · No solved rounds yet");
+      statsGridMarkup(entry);
+      $("statsBackButton").focus();
     }
     function openResult() {
       const win = state.status === "won";
@@ -273,6 +318,27 @@
       $("resultSummary").innerHTML = `<div class="result-label">${win ? "Solved in " + state.guesses.length + " guesses" : "The answer was"}</div><div class="result-word">${state.answer}</div><div class="result-label">Share your result</div><p style="white-space:pre-line;font-family:ui-monospace,monospace;line-height:1.35">${resultGrid()}</p>`;
       $("nextPuzzle").textContent = "Press New word to start another round.";
       $("shareButton").textContent = "Copy result"; renderStats(); openModal("resultModal");
+    }
+    function launchConfetti() {
+      const colors = ["#f0b429", "#4257d6", "#2f8c68", "#e8618c", "#8e6fe8", "#ffffff"];
+      const pieces = [];
+      for (let i = 0; i < 34; i++) {
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = `${Math.random() * 96}%`;
+        piece.style.width = `${6 + Math.random() * 6}px`;
+        piece.style.height = `${8 + Math.random() * 8}px`;
+        piece.style.background = colors[i % colors.length];
+        piece.style.animationDuration = `${1500 + Math.random() * 1300}ms`;
+        piece.style.animationDelay = `${Math.random() * 600}ms`;
+        pieces.push(piece);
+      }
+      $("confetti").replaceChildren(...pieces);
+    }
+    function openMedalCelebration() {
+      $("medalText").textContent = `Congratulations! You have solved ${stats.wins} of your ${stats.played} ${state.length}-letter rounds — a win rate above 90%. Enjoy your moment on the podium.`;
+      openModal("medalModal");
+      launchConfetti();
     }
     function openModal(id) {
       modalReturnFocus = document.activeElement; modalId = id; const backdrop = $(id); backdrop.hidden = false; backdrop.querySelector(".modal").focus();
@@ -320,7 +386,7 @@
       state = loadRound(); render();
       keyboardEl.addEventListener("click", event => { const button = event.target.closest("button[data-key]"); if (button) inputKey(button.dataset.key); });
       document.addEventListener("keydown", event => { if (modalId) { if (event.key === "Escape" && modalId !== "resultModal") { closeModal(); return; } if (event.key === "Tab") { const modal = $(modalId).querySelector(".modal"); const focusable = [...modal.querySelectorAll("button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])")].filter(node => !node.disabled); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } return; } if (/^[a-zA-Z]$/.test(event.key)) { event.preventDefault(); inputKey(event.key.toUpperCase()); } else if (event.key === "Enter" || event.key === "Backspace" || event.key === "Delete") { event.preventDefault(); inputKey(event.key === "Enter" ? "ENTER" : "BACK"); } });
-      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { renderStats(); openModal("statsModal"); }); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("resetButton").addEventListener("click", requestReset); $("confirmResetButton").addEventListener("click", confirmReset); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("brandLink").addEventListener("click", event => event.preventDefault());
+      $("lengthSelect").addEventListener("change", event => { if (state.scoring) { event.target.value = String(state.length); return; } switchLength(event.target.value); }); $("helpButton").addEventListener("click", () => openModal("helpModal")); $("statsButton").addEventListener("click", () => { showStatsOverview(); openModal("statsModal"); }); $("statsOverviewRows").addEventListener("click", event => { const row = event.target.closest("button[data-length]"); if (row) openStatsDetail(Number(row.dataset.length)); }); $("statsBackButton").addEventListener("click", () => showStatsOverview(statsDetailLength)); $("themeButton").addEventListener("click", toggleTheme); $("contrastSwitch").addEventListener("click", toggleContrast); $("newGameButton").addEventListener("click", startNewWord); $("resetButton").addEventListener("click", requestReset); $("confirmResetButton").addEventListener("click", confirmReset); $("shareButton").addEventListener("click", copyResult); $("resultNewWord").addEventListener("click", startNewWord); $("medalContinueButton").addEventListener("click", () => { closeModal("medalModal"); openResult(); }); $("brandLink").addEventListener("click", event => event.preventDefault());
       document.querySelectorAll("[data-close]").forEach(button => button.addEventListener("click", () => closeModal(button.dataset.close)));
       document.querySelectorAll(".modal-backdrop").forEach(backdrop => backdrop.addEventListener("click", event => { if (event.target === backdrop && backdrop.id !== "resultModal") closeModal(backdrop.id); }));
       setInterval(checkNewDay, 1000);
